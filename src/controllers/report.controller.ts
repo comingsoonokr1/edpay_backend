@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import { ReportService } from "../services/report.service";
-import { asyncHandler } from "../shared/utils/asyncHandler";
+import { ReportService } from "../services/report.service.js";
+import { asyncHandler } from "../shared/utils/asyncHandler.js";
 
 
 export class ReportController {

@@ -1,6 +1,6 @@
-import { ApiError } from "../shared/errors/api.error";
-import { BankAccount } from "../model/BankAccount.model";
-import { BankVerificationProvider } from "../providers/bankVerification.provider";
+import { ApiError } from "../shared/errors/api.error.js";
+import { BankAccount } from "../model/BankAccount.model.js";
+import { BankVerificationProvider } from "../providers/bankVerification.provider.js";
 
 export class BankService {
   static async linkBankAccount(data: {

@@ -1,5 +1,5 @@
 import bcrypt from "bcrypt";
-import { ApiError } from "../errors/api.error";
+import { ApiError } from "../errors/api.error.js";
 
 const SALT_ROUNDS = 12;
 

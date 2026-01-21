@@ -1,7 +1,7 @@
 // controllers/notification.controller.ts
 import { Request, Response } from "express";
-import { NotificationService } from "../services/notification.service";
-import { asyncHandler } from "../shared/utils/asyncHandler";
+import { NotificationService } from "../services/notification.service.js";
+import { asyncHandler } from "../shared/utils/asyncHandler.js";
 
 
 export class NotificationController {

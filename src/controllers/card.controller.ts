@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import { CardService } from "../services/card.service";
-import { asyncHandler } from "../shared/utils/asyncHandler";
+import { CardService } from "../services/card.service.js";
+import { asyncHandler } from "../shared/utils/asyncHandler.js";
 
 export class CardController {
   static storeCard = asyncHandler(async (req: Request, res: Response) => {

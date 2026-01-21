@@ -1,8 +1,8 @@
 import mongoose from "mongoose";
-import { ApiError } from "../shared/errors/api.error";
-import { Wallet } from "../model/Wallet.model";
-import { Transaction } from "../model/Transaction.model";
-import { stripe } from "../providers/stripe.provider";
+import { ApiError } from "../shared/errors/api.error.js";
+import { Wallet } from "../model/Wallet.model.js";
+import { Transaction } from "../model/Transaction.model.js";
+import { stripe } from "../providers/stripe.provider.js";
 
 
 

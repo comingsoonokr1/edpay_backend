@@ -1,9 +1,9 @@
 import { Request, Response } from "express";
-import { Wallet } from "../model/Wallet.model";
-import { ApiError } from "../shared/errors/api.error";
-import { VTPassProvider } from "../providers/vtpass.provider";
-import { DataSubscription } from "./DataSubscription.model";
-import { asyncHandler } from "../shared/utils/asyncHandler";
+import { Wallet } from "../model/Wallet.model.js";
+import { ApiError } from "../shared/errors/api.error.js";
+import { VTPassProvider } from "../providers/vtpass.provider.js";
+import { asyncHandler } from "../shared/utils/asyncHandler.js";
+import { DataSubscription } from "../model/DataSubscription.model.js";
 
 export class DataController {
   static purchaseData = asyncHandler(async (req: Request, res: Response) => {

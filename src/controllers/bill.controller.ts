@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import { BillService } from "../services/bill.service";
-import { asyncHandler } from "../shared/utils/asyncHandler";
+import { BillService } from "../services/bill.service.js";
+import { asyncHandler } from "../shared/utils/asyncHandler.js";
 
 export class BillController {
   static getProviders = asyncHandler( async (_req: Request, res: Response) => {

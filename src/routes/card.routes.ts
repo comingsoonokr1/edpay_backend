@@ -1,11 +1,11 @@
 import { Router } from "express";
-import { CardController } from "../controllers/card.controller";
-import { validate } from "../middlewares/validate.middleware";
+import { CardController } from "../controllers/card.controller.js";
+import { validate } from "../middlewares/validate.middleware.js";
 import {
   removeCardSchema,
   storeCardSchema,
-} from "../schemas/card.schema";
-import { authMiddleware } from "../middlewares/auth.middleware";
+} from "../schemas/card.schema.js";
+import { authMiddleware } from "../middlewares/auth.middleware.js";
 
 const router = Router();
 

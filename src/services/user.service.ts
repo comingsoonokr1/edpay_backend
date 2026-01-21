@@ -1,6 +1,6 @@
-import { ApiError } from "../shared/errors/api.error";
-import { User } from "../model/User.model";
-import { hashPassword, comparePassword } from "../shared/helpers/password.helper";
+import { ApiError } from "../shared/errors/api.error.js";
+import { User } from "../model/User.model.js";
+import { hashPassword, comparePassword } from "../shared/helpers/password.helper.js";
 
 export class UserService {
   static async getProfile(userId: string) {

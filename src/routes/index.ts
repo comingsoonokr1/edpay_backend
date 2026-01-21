@@ -1,15 +1,15 @@
 import { Router } from "express";
-import authRoutes from "./auth.routes";
-import airtimeRoutes from "./airtime.routes";
-import bankRoutes from "./bank.routes";
-import billRoutes from "./bill.routes";
-import cardRoutes from "./card.routes";
-import notificationRoutes from "./notification.routes";
-import paymentRoutes from "./payment.routes";
-import reportRoutes from "./report.routes";
-import userRoutes from "./user.routes";
-import walletRoutes from "./wallet.routes";
-import dataRoutes from "./data.routes";
+import authRoutes from "./auth.routes.js";
+import airtimeRoutes from "./airtime.routes.js";
+import bankRoutes from "./bank.routes.js";
+import billRoutes from "./bill.routes.js";
+import cardRoutes from "./card.routes.js";
+import notificationRoutes from "./notification.routes.js";
+import paymentRoutes from "./payment.routes.js";
+import reportRoutes from "./report.routes.js";
+import userRoutes from "./user.routes.js";
+import walletRoutes from "./wallet.routes.js";
+import dataRoutes from "./data.routes.js";
 
 const router = Router();
 

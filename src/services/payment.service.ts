@@ -1,7 +1,7 @@
-import { Transaction } from "../model/Transaction.model";
-import { Wallet } from "../model/Wallet.model";
-import { stripe } from "../providers/stripe.provider";
-import { ApiError } from "../shared/errors/api.error";
+import { Transaction } from "../model/Transaction.model.js";
+import { Wallet } from "../model/Wallet.model.js";
+import { stripe } from "../providers/stripe.provider.js";
+import { ApiError } from "../shared/errors/api.error.js";
 
 export class PaymentService {
   static async initiatePayment(data: {

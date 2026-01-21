@@ -1,6 +1,6 @@
 import { NextFunction, Request, Response } from "express";
-import { AuthService } from "../services/auth.service";
-import { asyncHandler } from "../shared/utils/asyncHandler";
+import { AuthService } from "../services/auth.service.js";
+import { asyncHandler } from "../shared/utils/asyncHandler.js";
 
 export class AuthController {
   static register = asyncHandler(async (req: Request, res: Response) => {

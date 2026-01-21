@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import { PaymentService } from "../services/payment.service";
-import { asyncHandler } from "../shared/utils/asyncHandler";
+import { PaymentService } from "../services/payment.service.js";
+import { asyncHandler } from "../shared/utils/asyncHandler.js";
 
 
 export class PaymentController {

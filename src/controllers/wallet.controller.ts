@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import { WalletService } from "../services/wallet.service";
-import { asyncHandler } from "../shared/utils/asyncHandler";
+import { WalletService } from "../services/wallet.service.js";
+import { asyncHandler } from "../shared/utils/asyncHandler.js";
 
 export class WalletController {
   static getBalance = asyncHandler(async (req: Request, res: Response) => {

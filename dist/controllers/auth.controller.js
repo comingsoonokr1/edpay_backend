@@ -1,0 +1,74 @@
+var _a;
+import { AuthService } from "../services/auth.service.js";
+import { asyncHandler } from "../shared/utils/asyncHandler.js";
+export class AuthController {
+}
+_a = AuthController;
+AuthController.register = asyncHandler(async (req, res) => {
+    const { fullName, email, password } = req.body;
+    const user = await AuthService.register(fullName, email, password);
+    res.status(201).json({
+        success: true,
+        message: "User registered successfully, OTP sent to email",
+    });
+});
+AuthController.login = asyncHandler(async (req, res) => {
+    const { email, password } = req.body;
+    const tokens = await AuthService.login(email, password);
+    res.status(200).json({
+        success: true,
+        message: "Login successful",
+        data: tokens,
+    });
+});
+AuthController.logout = asyncHandler(async (req, res) => {
+    const userId = req.user?.userId;
+    await AuthService.logout(userId);
+    res.status(200).json({
+        success: true,
+        message: "Logged out successfully",
+    });
+});
+AuthController.refreshToken = asyncHandler(async (req, res) => {
+    const { refreshToken } = req.body;
+    const accessToken = await AuthService.refreshToken(refreshToken);
+    res.status(200).json({
+        success: true,
+        data: { accessToken },
+    });
+});
+AuthController.forgotPassword = asyncHandler(async (req, res) => {
+    const { email } = req.body;
+    const token = await AuthService.forgotPassword(email);
+    res.status(200).json({
+        success: true,
+        message: "Password reset token sent",
+        token, // ⚠️ remove this in production, send via email
+    });
+});
+AuthController.resetPassword = asyncHandler(async (req, res) => {
+    const { token, newPassword } = req.body;
+    await AuthService.resetPassword(token, newPassword);
+    res.status(200).json({
+        success: true,
+        message: "Password reset successful",
+    });
+});
+AuthController.verifyEmail = asyncHandler(async (req, res) => {
+    const { email, otp } = req.body;
+    await AuthService.verifyEmailOTP(email, otp);
+    res.json({
+        success: true,
+        message: "Email verified successfully",
+    });
+});
+AuthController.resendOTP = asyncHandler(async (req, res, next) => {
+    try {
+        const { email } = req.body;
+        const result = await AuthService.resendOTP(email);
+        res.json(result);
+    }
+    catch (err) {
+        next(err);
+    }
+});

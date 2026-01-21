@@ -1,7 +1,7 @@
-import { Transaction } from "../model/Transaction.model";
-import { Wallet } from "../model/Wallet.model";
-import { VTPassProvider } from "../providers/vtpass.provider";
-import { ApiError } from "../shared/errors/api.error";
+import { Transaction } from "../model/Transaction.model.js";
+import { Wallet } from "../model/Wallet.model.js";
+import { VTPassProvider } from "../providers/vtpass.provider.js";
+import { ApiError } from "../shared/errors/api.error.js";
 
 export class BillService {
   static async getProviders() {

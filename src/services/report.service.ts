@@ -1,4 +1,4 @@
-import { Transaction } from "../model/Transaction.model";
+import { Transaction } from "../model/Transaction.model.js";
 
 export class ReportService {
   static async transactionSummary(userId?: string) {

@@ -1,12 +1,12 @@
 import { Router } from "express";
-import { WalletController } from "../controllers/wallet.controller";
-import { validate } from "../middlewares/validate.middleware";
+import { WalletController } from "../controllers/wallet.controller.js";
+import { validate } from "../middlewares/validate.middleware.js";
 import {
   fundWalletSchema,
   transferSchema,
   withdrawSchema,
-} from "../schemas/wallet.schema";
-import { authMiddleware } from "../middlewares/auth.middleware";
+} from "../schemas/wallet.schema.js";
+import { authMiddleware } from "../middlewares/auth.middleware.js";
 
 const router = Router();
 

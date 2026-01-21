@@ -1,11 +1,11 @@
 import { Router } from "express";
-import { BillController } from "../controllers/bill.controller";
-import { validate } from "../middlewares/validate.middleware";
+import { BillController } from "../controllers/bill.controller.js";
+import { validate } from "../middlewares/validate.middleware.js";
 import {
   billStatusSchema,
   payBillSchema,
-} from "../schemas/bill.schema";
-import { authMiddleware } from "../middlewares/auth.middleware";
+} from "../schemas/bill.schema.js";
+import { authMiddleware } from "../middlewares/auth.middleware.js";
 
 const router = Router();
 

@@ -1,5 +1,5 @@
-import app from "./app";
-import { connectDB } from "./shared/utils/db.config";
+import app from "./app.js";
+import { connectDB } from "./shared/utils/db.config.js";
 
 const PORT = process.env.PORT || 5000;
 

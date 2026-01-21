@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import { BankService } from "../services/bank.service";
-import { asyncHandler } from "../shared/utils/asyncHandler";
+import { BankService } from "../services/bank.service.js";
+import { asyncHandler } from "../shared/utils/asyncHandler.js";
 
 export class BankController {
   static linkBank = asyncHandler(async (req: Request, res: Response) => {

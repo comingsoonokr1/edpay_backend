@@ -1,11 +1,11 @@
 import { Router } from "express";
-import { NotificationController } from "../controllers/notification.controller";
-import { validate } from "../middlewares/validate.middleware";
+import { NotificationController } from "../controllers/notification.controller.js";
+import { validate } from "../middlewares/validate.middleware.js";
 import {
   getUserNotificationsSchema,
   sendNotificationSchema,
-} from "../schemas/notification.schema";
-import { authMiddleware } from "../middlewares/auth.middleware";
+} from "../schemas/notification.schema.js";
+import { authMiddleware } from "../middlewares/auth.middleware.js";
 
 const router = Router();
 

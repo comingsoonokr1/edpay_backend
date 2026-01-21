@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import { AirtimeService } from "../services/airtime.service";
-import { asyncHandler } from "../shared/utils/asyncHandler";
+import { AirtimeService } from "../services/airtime.service.js";
+import { asyncHandler } from "../shared/utils/asyncHandler.js";
 
 export class AirtimeController {
   static getProviders = asyncHandler(async (_req: Request, res: Response) => {

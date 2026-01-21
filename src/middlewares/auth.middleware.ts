@@ -1,6 +1,6 @@
 import { Request, Response, NextFunction } from "express";
 import jwt from "jsonwebtoken";
-import { ApiError } from "../shared/errors/api.error";
+import { ApiError } from "../shared/errors/api.error.js";
 
 export const authMiddleware = (
   req: Request & { user?: any },

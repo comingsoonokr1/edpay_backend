@@ -1,6 +1,6 @@
 import { Request, Response } from "express";
-import { UserService } from "../services/user.service";
-import { asyncHandler } from "../shared/utils/asyncHandler";
+import { UserService } from "../services/user.service.js";
+import { asyncHandler } from "../shared/utils/asyncHandler.js";
 
 export class UserController {
   static getProfile = asyncHandler( async (req: Request, res: Response) => {

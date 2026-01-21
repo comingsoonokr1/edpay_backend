@@ -1,10 +1,10 @@
 import jwt, { SignOptions } from "jsonwebtoken";
-import { jwtConfig } from "../shared/utils/jwt.config";
-import { ApiError } from "../shared/errors/api.error";
+import { jwtConfig } from "../shared/utils/jwt.config.js";
+import { ApiError } from "../shared/errors/api.error.js";
 import {
   AccessTokenPayload,
   RefreshTokenPayload,
-} from "../shared/types/jwt.types";
+} from "../shared/types/jwt.types.js";
 
 export class TokenService {
   //  Generate Access Token

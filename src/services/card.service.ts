@@ -1,6 +1,6 @@
-import { Card } from "../model/Card.model";
-import { StripeProvider } from "../providers/stripe.provider";
-import { ApiError } from "../shared/errors/api.error";
+import { Card } from "../model/Card.model.js";
+import { StripeProvider } from "../providers/stripe.provider.js";
+import { ApiError } from "../shared/errors/api.error.js";
 
 
 export class CardService {

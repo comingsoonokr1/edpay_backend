@@ -1,11 +1,11 @@
 import { Router } from "express";
-import { BankController } from "../controllers/bank.controller";
-import { validate } from "../middlewares/validate.middleware";
+import { BankController } from "../controllers/bank.controller.js";
+import { validate } from "../middlewares/validate.middleware.js";
 import {
   getUserBanksSchema,
   linkBankSchema,
-} from "../schemas/bank.schema";
-import { authMiddleware } from "../middlewares/auth.middleware";
+} from "../schemas/bank.schema.js";
+import { authMiddleware } from "../middlewares/auth.middleware.js";
 
 const router = Router();
 

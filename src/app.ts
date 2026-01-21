@@ -8,9 +8,9 @@ import morgan from "morgan";
 
 
 
-import { errorHandler } from "./middlewares/error.middleware";
-import apiRoutes from "../src/routes";
-import { setupSwagger } from "./shared/utils/swagger.config";
+import { errorHandler } from "./middlewares/error.middleware.js";
+import apiRoutes from "./routes/index.js";
+import { setupSwagger } from "./shared/utils/swagger.config.js";
 
 
 

@@ -1,8 +1,8 @@
 import { Router } from "express";
-import { DataController } from "../controllers/data.controller";
-import { validate } from "../middlewares/validate.middleware";
-import { dataPurchaseSchema } from "../schemas/data.schema";
-import { authMiddleware } from "../middlewares/auth.middleware";
+import { DataController } from "../controllers/data.controller.js";
+import { validate } from "../middlewares/validate.middleware.js";
+import { dataPurchaseSchema } from "../schemas/data.schema.js";
+import { authMiddleware } from "../middlewares/auth.middleware.js";
 
 const router = Router();
 

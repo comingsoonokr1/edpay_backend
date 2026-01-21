@@ -3,7 +3,7 @@ import {
   AirtimePurchasePayload,
   BillPaymentPayload,
   DataPurchasePayload,
-} from "./provider.types";
+} from "./provider.types.js";
 
 const VTPASS_BASE_URL = "https://api-service.vtpass.com/api";
 const API_KEY = process.env.VTPASS_API_KEY!; 

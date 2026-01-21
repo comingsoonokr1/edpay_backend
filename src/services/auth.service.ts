@@ -1,10 +1,10 @@
-import { User } from "../model/User.model";
-import { ApiError } from "../shared/errors/api.error";
-import { hashPassword, comparePassword } from "../shared/helpers/password.helper";
+import { User } from "../model/User.model.js";
+import { ApiError } from "../shared/errors/api.error.js";
+import { hashPassword, comparePassword } from "../shared/helpers/password.helper.js";
 import crypto from "crypto";
-import { TokenService } from "./token.service";
-import { generateOTP, hashOTP } from "../shared/helpers/otp.helpers";
-import { sendOTPEmail } from "../shared/helpers/email.helper";
+import { TokenService } from "./token.service.js";
+import { generateOTP, hashOTP } from "../shared/helpers/otp.helpers.js";
+import { sendOTPEmail } from "../shared/helpers/email.helper.js";
 
 
 
