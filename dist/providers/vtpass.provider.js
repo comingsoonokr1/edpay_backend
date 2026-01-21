@@ -1,3 +1,5 @@
+import dotenv from "dotenv";
+dotenv.config();
 import axios from "axios";
 const VTPASS_BASE_URL = "https://api-service.vtpass.com/api";
 const API_KEY = process.env.VTPASS_API_KEY;
