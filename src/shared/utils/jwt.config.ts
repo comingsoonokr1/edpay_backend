@@ -1,0 +1,8 @@
+import { SignOptions } from "jsonwebtoken";
+
+export const jwtConfig = {
+  accessSecret: process.env.JWT_ACCESS_SECRET!,
+  refreshSecret: process.env.JWT_REFRESH_SECRET!,
+  accessExpiresIn: (process.env.ACCESS_TOKEN_EXPIRES || "15m") as SignOptions["expiresIn"],
+  refreshExpiresIn: (process.env.REFRESH_TOKEN_EXPIRES || "7d") as SignOptions["expiresIn"],
+};

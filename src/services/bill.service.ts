@@ -1,0 +1,90 @@
+import { Transaction } from "../model/Transaction.model";
+import { Wallet } from "../model/Wallet.model";
+import { VTPassProvider } from "../providers/vtpass.provider";
+import { ApiError } from "../shared/errors/api.error";
+
+export class BillService {
+  static async getProviders() {
+    return [
+      { code: "DSTV", name: "DSTV Subscription" },
+      { code: "GOTV", name: "GOTV Subscription" },
+      { code: "PHCN", name: "Electricity Bill" },
+      { code: "WATER", name: "Water Corporation" },
+    ];
+  }
+
+  static async payBill(data: {
+    userId: string;
+    provider: string;
+    customerId: string;
+    amount: number;
+  }) {
+    const wallet = await Wallet.findOne({ userId: data.userId });
+    if (!wallet || wallet.balance < data.amount) {
+      throw new ApiError(400, "Insufficient wallet balance");
+    }
+
+    const reference = `BILL-${Date.now()}`;
+
+    //check if transaction exists
+    const existing = await Transaction.findOne({ reference });
+    if (existing) return existing;
+
+    // Create pending transaction FIRST
+    const transaction = await Transaction.create({
+      userId: data.userId,
+      type: "bill",
+      amount: data.amount,
+      reference,
+      status: "pending",
+      meta: {
+        provider: data.provider,
+        customerId: data.customerId,
+      },
+    });
+
+    try {
+      const response = await VTPassProvider.payBill({
+        serviceID: data.provider,
+        billersCode: data.customerId,
+        amount: data.amount,
+        request_id: reference,
+      });
+
+      if (response.code !== "000") {
+        transaction.status = "failed";
+        transaction.meta.response = response;
+        await transaction.save();
+
+        throw new ApiError(400, "Bill payment failed");
+      }
+
+      // Debit wallet ONLY after success
+      wallet.balance -= data.amount;
+      await wallet.save();
+
+      transaction.status = "success";
+      transaction.meta.response = response;
+      await transaction.save();
+
+      return transaction;
+    } catch (error: any) {
+      transaction.status = "failed";
+      transaction.meta.error = error?.message || "Payment error";
+      await transaction.save();
+
+      throw error;
+    }
+  }
+
+  static async getStatus(reference: string) {
+    const transaction = await Transaction.findOne({ reference });
+
+    if (!transaction) {
+      throw new ApiError(404, "Bill payment not found");
+    }
+
+    return transaction;
+  }
+}
+

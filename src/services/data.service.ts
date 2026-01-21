@@ -1,0 +1,114 @@
+import { Transaction } from "../model/Transaction.model";
+import { Wallet } from "../model/Wallet.model";
+import { VTPassProvider } from "../providers/vtpass.provider";
+import { ApiError } from "../shared/errors/api.error";
+
+export class DataService {
+  static async getProviders() {
+    return [
+      { code: "mtn-data", name: "MTN Data" },
+      { code: "airtel-data", name: "Airtel Data" },
+      { code: "glo-data", name: "Glo Data" },
+      { code: "9mobile-data", name: "9mobile Data" },
+    ];
+  }
+
+  static async getPlans(serviceID: string) {
+    const response = await VTPassProvider.getDataPlans(serviceID);
+
+    if (response.code !== "000") {
+      throw new ApiError(400, "Unable to fetch data plans");
+    }
+
+    return response.content?.variations || [];
+  }
+
+  static async purchaseData(data: {
+    userId: string;
+    serviceID: string;
+    planId: string;
+    phone: string;
+  }) {
+    // Fetch plans server-side
+    const plans = await this.getPlans(data.serviceID);
+    const plan = plans.find((p: any) => p.variation_code === data.planId);
+
+    if (!plan) {
+      throw new ApiError(400, "Invalid data plan selected");
+    }
+
+    const amount = Number(plan.variation_amount);
+    const reference = `DATA-${Date.now()}`;
+
+    // Prevent duplicates
+    const existing = await Transaction.findOne({ reference });
+    if (existing) {
+      throw new ApiError(409, "Duplicate transaction");
+    }
+
+    // Atomic wallet debit
+    const wallet = await Wallet.findOneAndUpdate(
+      { userId: data.userId, balance: { $gte: amount } },
+      { $inc: { balance: -amount } },
+      { new: true }
+    );
+
+    if (!wallet) {
+      throw new ApiError(400, "Insufficient wallet balance");
+    }
+
+    // Create pending transaction
+    const transaction = await Transaction.create({
+      userId: data.userId,
+      type: "debit",
+      source: "data",
+      amount,
+      reference,
+      status: "pending",
+      meta: {
+        phone: data.phone,
+        plan,
+      },
+    });
+
+    try {
+      const response = await VTPassProvider.purchaseData({
+        serviceID: data.serviceID,
+        billersCode: data.phone,
+        variation_code: plan.variation_code,
+        amount,
+        request_id: reference,
+      });
+
+      if (response.code !== "000") {
+        throw new Error("VTpass failed");
+      }
+
+      transaction.status = "success";
+      transaction.meta.providerResponse = response;
+      await transaction.save();
+
+      return transaction;
+    } catch (error) {
+      // Refund wallet
+      await Wallet.findOneAndUpdate(
+        { userId: data.userId },
+        { $inc: { balance: amount } }
+      );
+
+      transaction.status = "failed";
+      transaction.meta.error = "Data purchase failed";
+      await transaction.save();
+
+      throw new ApiError(400, "Data subscription failed");
+    }
+  }
+
+  static async getStatus(reference: string) {
+    const transaction = await Transaction.findOne({ reference });
+    if (!transaction) {
+      throw new ApiError(404, "Transaction not found");
+    }
+    return transaction;
+  }
+}

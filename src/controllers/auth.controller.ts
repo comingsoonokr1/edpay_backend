@@ -1,0 +1,94 @@
+import { NextFunction, Request, Response } from "express";
+import { AuthService } from "../services/auth.service";
+import { asyncHandler } from "../shared/utils/asyncHandler";
+
+export class AuthController {
+  static register = asyncHandler(async (req: Request, res: Response) => {
+    const { fullName, email, password } = req.body;
+
+    const user = await AuthService.register(fullName, email, password);
+
+    res.status(201).json({
+      success: true,
+      message: "User registered successfully, OTP sent to email",
+    });
+  });
+
+  static login = asyncHandler(async (req: Request, res: Response) => {
+    const { email, password } = req.body;
+
+    const tokens = await AuthService.login(email, password);
+
+    res.status(200).json({
+      success: true,
+      message: "Login successful",
+      data: tokens,
+    });
+  });
+
+  static logout = asyncHandler(async (req: Request, res: Response) => {
+    const userId = req.user?.userId;
+
+    await AuthService.logout(userId!);
+
+    res.status(200).json({
+      success: true,
+      message: "Logged out successfully",
+    });
+  });
+
+  static refreshToken = asyncHandler(async (req: Request, res: Response) => {
+    const { refreshToken } = req.body;
+
+    const accessToken = await AuthService.refreshToken(refreshToken);
+
+    res.status(200).json({
+      success: true,
+      data: { accessToken },
+    });
+  });
+
+  static forgotPassword = asyncHandler(async (req: Request, res: Response) => {
+    const { email } = req.body;
+
+    const token = await AuthService.forgotPassword(email);
+
+    res.status(200).json({
+      success: true,
+      message: "Password reset token sent",
+      token, // ⚠️ remove this in production, send via email
+    });
+  });
+
+  static resetPassword = asyncHandler(async (req: Request, res: Response) => {
+    const { token, newPassword } = req.body;
+
+    await AuthService.resetPassword(token, newPassword);
+
+    res.status(200).json({
+      success: true,
+      message: "Password reset successful",
+    });
+  });
+
+  static verifyEmail =  asyncHandler(async (req: Request, res: Response) => {
+  const { email, otp } = req.body;
+
+  await AuthService.verifyEmailOTP(email, otp);
+
+  res.json({
+    success: true,
+    message: "Email verified successfully",
+  });
+});
+
+ static resendOTP = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { email } = req.body;
+      const result = await AuthService.resendOTP(email);
+      res.json(result);
+    } catch (err) {
+      next(err);
+    }
+  });
+}
