@@ -14,8 +14,8 @@ const options = {
 
     servers: [
       {
-        url: "http://localhost:5000/api",
-        description: "Local server",
+        url: "https://edpay-backend.onrender.com/api",
+        description: "Production server",
       },
     ],
 
