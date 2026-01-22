@@ -28,7 +28,7 @@ app.use(express.json()); // JSON body parser
 setupSwagger(app);
 
 // Routes
-app.use("/api", apiRoutes);
+app.use("/", apiRoutes);
 
 
 // Health Check

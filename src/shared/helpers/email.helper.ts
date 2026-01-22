@@ -1,7 +1,10 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import nodemailer from "nodemailer";
 
 const transporter = nodemailer.createTransport({
-  host: "smtp-relay.brevo.com",
+  host: "smtp.gmail.com",
   port: 587,
   secure: false,
   auth: {
@@ -12,13 +15,14 @@ const transporter = nodemailer.createTransport({
 
 export async function sendOTPEmail(email: string, otp: string) {
   await transporter.sendMail({
-    from: `"EasyPay" <no-reply@easypay.com>`,
+    from: `"EasyPay" <${process.env.EMAIL_FROM}>`,
     to: email,
     subject: "Verify your email",
     html: `
       <h2>Email Verification</h2>
+      <p>Your OTP code is:</p>
       <h1>${otp}</h1>
-      <p>Expires in 10 minutes</p>
+      <p>This code expires in 10 minutes.</p>
     `,
   });
 }
