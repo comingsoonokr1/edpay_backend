@@ -51,9 +51,9 @@ export class AuthService {
     const isValid = await comparePassword(password, user.password);
     if (!isValid) throw new ApiError(401, "Invalid credentials");
 
-    if (!user.isEmailVerified) {
-      throw new ApiError(403, "Please verify your email first");
-    }
+    // if (!user.isEmailVerified) {
+    //   throw new ApiError(403, "Please verify your email first");
+    // }
 
     const userId = user._id.toString();
 
