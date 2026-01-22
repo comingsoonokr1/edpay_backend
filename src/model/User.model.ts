@@ -4,6 +4,7 @@ import mongoose from "mongoose";
 export interface UserDocument extends mongoose.Document {
     fullName: string;
     email: string;
+    phoneNumber: string;
     password: string;
     role: "user" | "admin";
     refreshToken?: string | null;
