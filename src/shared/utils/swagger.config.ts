@@ -12,12 +12,12 @@ const options = {
       description: "EDPay API Documentation",
     },
 
-    servers: [
-      {
-        url: "https://edpay-backend.onrender.com/api",
-        description: "Production server",
-      },
-    ],
+    // servers: [
+    //   {
+    //     url: "https://edpay-backend.onrender.com/api",
+    //     description: "Production server",
+    //   },
+    // ],
 
     components: {
       securitySchemes: {
