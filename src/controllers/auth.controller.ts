@@ -4,9 +4,9 @@ import { asyncHandler } from "../shared/utils/asyncHandler.js";
 
 export class AuthController {
   static register = asyncHandler(async (req: Request, res: Response) => {
-    const { fullName, email, password } = req.body;
+    const { fullName, email, password, phoneNumber } = req.body;
 
-    const user = await AuthService.register(fullName, email, password);
+     await AuthService.register(fullName, email, password, phoneNumber);
 
     res.status(201).json({
       success: true,

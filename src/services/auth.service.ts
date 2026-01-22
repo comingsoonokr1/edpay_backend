@@ -9,7 +9,7 @@ import { sendOTPEmail } from "../shared/helpers/email.helper.js";
 
 
 export class AuthService {
-  static async register(fullName: string, email: string, password: string) {
+  static async register(fullName: string, email: string, password: string, phoneNumber: string) {
     const exists = await User.findOne({ email });
     if (exists) throw new ApiError(403, "User already exists");
 
@@ -33,6 +33,7 @@ export class AuthService {
       fullName,
       email,
       password: hashedPassword,
+      phoneNumber,
       emailOtp: hashedOtp,
       emailOtpExpiry: new Date(Date.now() + 10 * 60 * 1000), //10 mins 
       isEmailVerified: false
