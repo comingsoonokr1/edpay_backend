@@ -8,12 +8,12 @@ const options = {
             version: "1.0.0",
             description: "EDPay API Documentation",
         },
-        servers: [
-            {
-                url: "http://localhost:5000/api",
-                description: "Local server",
-            },
-        ],
+        // servers: [
+        //   {
+        //     url: "https://edpay-backend.onrender.com/api",
+        //     description: "Production server",
+        //   },
+        // ],
         components: {
             securitySchemes: {
                 bearerAuth: {
@@ -30,6 +30,7 @@ const options = {
                         fullName: { type: "string", example: "John Doe" },
                         email: { type: "string", example: "john@example.com" },
                         password: { type: "string", example: "Password123" },
+                        phoneNumber: { type: "string", example: "08031234567" },
                     },
                 },
                 LoginRequest: {

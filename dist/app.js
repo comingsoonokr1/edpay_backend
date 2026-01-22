@@ -8,6 +8,7 @@ import { errorHandler } from "./middlewares/error.middleware.js";
 import apiRoutes from "./routes/index.js";
 import { setupSwagger } from "./shared/utils/swagger.config.js";
 const app = express();
+app.set("trust proxy", 1);
 // Middleware
 app.use(cors()); // Enable CORS
 app.use(helmet()); // Secure HTTP headers

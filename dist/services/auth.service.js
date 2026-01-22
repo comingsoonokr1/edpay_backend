@@ -6,7 +6,7 @@ import { TokenService } from "./token.service.js";
 import { generateOTP, hashOTP } from "../shared/helpers/otp.helpers.js";
 import { sendOTPEmail } from "../shared/helpers/email.helper.js";
 export class AuthService {
-    static async register(fullName, email, password) {
+    static async register(fullName, email, password, phoneNumber) {
         const exists = await User.findOne({ email });
         if (exists)
             throw new ApiError(403, "User already exists");
@@ -24,6 +24,7 @@ export class AuthService {
             fullName,
             email,
             password: hashedPassword,
+            phoneNumber,
             emailOtp: hashedOtp,
             emailOtpExpiry: new Date(Date.now() + 10 * 60 * 1000), //10 mins 
             isEmailVerified: false

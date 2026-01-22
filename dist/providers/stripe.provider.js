@@ -1,8 +1,6 @@
 import dotenv from "dotenv";
 dotenv.config();
 import Stripe from "stripe";
-console.log("Stripe key:", process.env.STRIPE_SECRET_KEY);
-console.log("REFRESH_TOKEN_EXPIRES:", process.env.REFRESH_TOKEN_EXPIRES);
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY, {
     apiVersion: "2025-12-15.clover",
 });

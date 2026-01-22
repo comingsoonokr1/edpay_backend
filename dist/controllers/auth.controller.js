@@ -5,8 +5,8 @@ export class AuthController {
 }
 _a = AuthController;
 AuthController.register = asyncHandler(async (req, res) => {
-    const { fullName, email, password } = req.body;
-    const user = await AuthService.register(fullName, email, password);
+    const { fullName, email, password, phoneNumber } = req.body;
+    await AuthService.register(fullName, email, password, phoneNumber);
     res.status(201).json({
         success: true,
         message: "User registered successfully, OTP sent to email",
