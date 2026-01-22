@@ -1,5 +1,8 @@
 // import dotenv from "dotenv";
 // dotenv.config();
+console.log("refresh token:", process.env.REFRESH_TOKEN_EXPIRES)
+console.log("ENV vars:");
+console.log("Stripe SECRET key:", process.env.STRIPE_SECRET_KEY);
 
 if (!process.env.STRIPE_SECRET_KEY) {
   throw new Error("Missing STRIPE_SECRET_KEY env variable");
@@ -8,8 +11,7 @@ if (!process.env.STRIPE_SECRET_KEY) {
 
 import Stripe from "stripe";
 
-console.log("ENV vars:");
-console.log("Stripe SECRET key:", process.env.STRIPE_SECRET_KEY);
+
 
 export const stripe = new Stripe(process.env.STRIPE_SECRET_KEY!, {
   apiVersion: "2025-12-15.clover",
