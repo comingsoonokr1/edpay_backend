@@ -45,3 +45,9 @@ export const refreshTokenLimiter = createRateLimiter(
   10,
   "Too many token refresh attempts."
 );
+
+export const resendOTPLimiter = createRateLimiter(
+  10 * 60 * 1000, // 10 minutes
+  3,              // max 3 resends
+  "Too many OTP requests. Please wait before trying again."
+);

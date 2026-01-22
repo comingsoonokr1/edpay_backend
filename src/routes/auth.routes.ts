@@ -6,6 +6,7 @@ import {
   registerLimiter,
   forgotPasswordLimiter,
   refreshTokenLimiter,
+  resendOTPLimiter,
 } from "../middlewares/rate.middleware.js";
 import {
   registerSchema,
@@ -212,6 +213,7 @@ router.post(
  */
 router.post(
   "/resend-otp",
+  resendOTPLimiter,
   validate(resendOTPSchema),
   AuthController.resendOTP
 );
