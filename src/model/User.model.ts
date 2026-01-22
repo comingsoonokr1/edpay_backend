@@ -10,7 +10,7 @@ export interface UserDocument extends mongoose.Document {
     refreshToken?: string | null;
     emailOtp?: string;
     emailOtpExpiry?: Date;
-    isEmailVerified: boolean;
+    isPhoneVerified: boolean;
     emailVerificationToken?: string | null;
     emailVerificationExpires?: Date | null;
     forgotPasswordToken?: string | null;
@@ -52,7 +52,7 @@ const UserSchema = new mongoose.Schema({
     emailOtpExpiry: {
         type: Date,
     },
-    isEmailVerified: {
+    isPhoneVerified: {
         type: Boolean,
         default: false
     },
