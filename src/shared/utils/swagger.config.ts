@@ -36,6 +36,7 @@ const options = {
             fullName: { type: "string", example: "John Doe" },
             email: { type: "string", example: "john@example.com" },
             password: { type: "string", example: "Password123" },
+            phoneNumber: { type: "string", example: "08031234567" },
           },
         },
 
