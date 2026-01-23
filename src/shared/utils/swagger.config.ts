@@ -12,12 +12,12 @@ const options = {
       description: "EDPay API Documentation",
     },
 
-    servers: [
-      {
-        url: "https://edpaybackend-production.up.railway.app/api",
-        description: "Production server",
-      },
-    ],
+    // servers: [
+    //   {
+    //     url: "https://edpaybackend-production.up.railway.app/api",
+    //     description: "Production server",
+    //   },
+    // ],
 
     components: {
       securitySchemes: {

@@ -1,5 +1,5 @@
-// import dotenv from "dotenv";
-// dotenv.config();
+import dotenv from "dotenv";
+dotenv.config();
 
 import express from "express";
 import cors from "cors";
@@ -9,6 +9,7 @@ import morgan from "morgan";
 import { errorHandler } from "./middlewares/error.middleware.js";
 import apiRoutes from "./routes/index.js";
 import { setupSwagger } from "./shared/utils/swagger.config.js";
+import webhookRoutes from "./routes/webhook.routes.js";
 
 
 
@@ -17,6 +18,8 @@ const app = express();
 
 app.set("trust proxy", 1);
 
+
+app.use("/webhook", webhookRoutes);
 
 // Middleware
 app.use(cors()); // Enable CORS

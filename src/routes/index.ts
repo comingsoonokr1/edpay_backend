@@ -11,6 +11,7 @@ import userRoutes from "./user.routes.js";
 import walletRoutes from "./wallet.routes.js";
 import dataRoutes from "./data.routes.js";
 
+
 const router = Router();
 
 router.use("/auth", authRoutes);
@@ -24,6 +25,8 @@ router.use("/payment", paymentRoutes);
 router.use("/report", reportRoutes);
 router.use("/wallet", walletRoutes);
 router.use("/data", dataRoutes);
+
+
 
 
 

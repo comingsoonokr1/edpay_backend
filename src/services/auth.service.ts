@@ -36,7 +36,7 @@ export class AuthService {
       phoneNumber,
       emailOtp: hashedOtp,
       emailOtpExpiry: new Date(Date.now() + 10 * 60 * 1000), //10 mins 
-      isEmailVerified: false
+      isPhoneVerified: false
     });
 
     // Wallet creation should be done separately in WalletService or controller
@@ -125,7 +125,7 @@ export class AuthService {
 
     if (!user) throw new ApiError(401, "Invalid or expired OTP");
 
-    user.isEmailVerified = true;
+    user.isPhoneVerified = true;
     user.emailOtp = undefined;
     user.emailOtpExpiry = undefined;
 

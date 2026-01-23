@@ -3,6 +3,9 @@ import { ApiError } from "../shared/errors/api.error.js";
 import { Wallet } from "../model/Wallet.model.js";
 import { Transaction } from "../model/Transaction.model.js";
 import { stripe } from "../providers/stripe.provider.js";
+import { PaystackTransferProvider } from "../providers/paystackTransaferProvider.js";
+import { User } from "../model/User.model.js";
+
 
 
 
@@ -123,29 +126,52 @@ export class WalletService {
   }
 
   // Transfer method unchanged
-  static async transfer(senderId: string, receiverEmail: string, amount: number) {
-    if (amount <= 0) throw new ApiError(401, "Invalid amount");
+ static async transfer({
+  senderId,
+  method,
+  recipient,
+  amount,
+  bank,
+  accountNumber,
+}: {
+  senderId: string;
+  method: "user" | "bank";
+  recipient: string;
+  amount: number;
+  bank?: string;
+  accountNumber?: string;
+}) {
+  if (amount <= 0) throw new ApiError(400, "Invalid amount");
 
-    const session = await mongoose.startSession();
-    session.startTransaction();
+  const session = await mongoose.startSession();
+  session.startTransaction();
 
-    try {
-      const senderWallet = await Wallet.findOne({ userId: senderId }).session(session);
-      if (!senderWallet) throw new ApiError(404, "Sender wallet not found");
-      if (senderWallet.balance < amount) throw new ApiError(403, "Insufficient funds");
+  try {
+    /** Sender Wallet */
+    const senderWallet = await Wallet.findOne({ userId: senderId }).session(session);
+    if (!senderWallet) throw new ApiError(404, "Sender wallet not found");
 
-      const receiverWallet = await Wallet.findOne({}).populate({
-        path: "userId",
-        match: { email: receiverEmail },
-      }).session(session);
+    const availableBalance =
+      senderWallet.balance - (senderWallet.reservedBalance || 0);
 
-      if (!receiverWallet || !receiverWallet.userId) throw new ApiError(404, "Receiver not found");
+    if (availableBalance < amount)
+      throw new ApiError(403, "Insufficient balance");
+
+    /** ================= INTERNAL TRANSFER ================= */
+    if (method === "user") {
+      const user = await User.findOne({ phoneNumber: recipient }).session(session);
+      if (!user) throw new ApiError(404, "Recipient not found");
+
+      const receiverWallet = await Wallet.findOne({ userId: user._id }).session(session);
+      if (!receiverWallet) throw new ApiError(404, "Recipient wallet not found");
 
       senderWallet.balance -= amount;
       receiverWallet.balance += amount;
 
-      await senderWallet.save();
-      await receiverWallet.save();
+      await senderWallet.save({ session });
+      await receiverWallet.save({ session });
+
+      const reference = `TRF_${Date.now()}`;
 
       await Transaction.create(
         [
@@ -153,16 +179,16 @@ export class WalletService {
             userId: senderId,
             type: "debit",
             amount,
-            reference: `transfer_${Date.now()}`,
+            reference,
             status: "success",
             source: "wallet",
-            details: { to: receiverEmail },
+            details: { to: recipient },
           },
           {
-            userId: receiverWallet.userId._id,
+            userId: receiverWallet.userId,
             type: "credit",
             amount,
-            reference: `transfer_${Date.now()}`,
+            reference,
             status: "success",
             source: "wallet",
             details: { from: senderId },
@@ -172,13 +198,65 @@ export class WalletService {
       );
 
       await session.commitTransaction();
-      session.endSession();
-
-      return senderWallet.balance;
-    } catch (err) {
-      await session.abortTransaction();
-      session.endSession();
-      throw err;
+      return {
+        message: "Transfer successful",
+        balance: senderWallet.balance,
+      };
     }
+
+    /** ================= BANK TRANSFER ================= */
+    if (method === "bank") {
+      if (!bank || !accountNumber)
+        throw new ApiError(400, "Bank and account number required");
+
+      // LOCK FUNDS
+      senderWallet.reservedBalance += amount;
+      await senderWallet.save({ session });
+
+      const recipientCode = await PaystackTransferProvider.createRecipient(
+        "EdPay User",
+        accountNumber,
+        bank
+      );
+
+      const transfer = await PaystackTransferProvider.initiateTransfer(
+        recipientCode,
+        amount,
+        "EdPay Wallet Transfer"
+      );
+
+      await Transaction.create(
+        [
+          {
+            userId: senderId,
+            type: "debit",
+            amount,
+            reference: transfer.transfer_code,
+            status: "pending",
+            source: "bank",
+            details: { bank, accountNumber, recipientCode },
+          },
+        ],
+        { session }
+      );
+
+      await session.commitTransaction();
+
+      return {
+        message: "Bank transfer initiated",
+        transferCode: transfer.transfer_code,
+        balance: senderWallet.balance - senderWallet.reservedBalance,
+      };
+    }
+
+    throw new ApiError(400, "Invalid transfer method");
+  } catch (err) {
+    await session.abortTransaction();
+    throw err;
+  } finally {
+    session.endSession();
   }
+}
+
+
 }

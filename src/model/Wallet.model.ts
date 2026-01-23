@@ -10,6 +10,11 @@ const WalletSchema = new mongoose.Schema({
         type: Number, 
         default: 0 
     },
+    reservedBalance: { 
+        type: Number, 
+        required: true, 
+        default: 0 
+    },
     currency: { 
         type: String, 
         default: "NGN" 

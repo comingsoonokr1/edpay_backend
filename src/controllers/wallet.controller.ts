@@ -53,14 +53,30 @@ export class WalletController {
 
   static transfer = asyncHandler(async (req: Request, res: Response) => {
     const senderId = req.user!.userId;
-    const { receiverEmail, amount } = req.body;
+    const { method, recipient, amount, bank, accountNumber } = req.body;
 
-    const balance = await WalletService.transfer(senderId, receiverEmail, amount);
+    // Validate required fields
+    if (!method || !recipient || !amount) {
+      return res.status(400).json({
+        success: false,
+        message: "Method, recipient, and amount are required",
+      });
+    }
+
+    // Call WalletService.transfer
+    const result = await WalletService.transfer({
+      senderId,
+      method,
+      recipient,
+      amount,
+      bank,
+      accountNumber,
+    });
 
     res.status(200).json({
       success: true,
-      message: "Transfer successful",
-      data: { balance },
+      message: result.message,
+      data: { balance: result.balance, transferCode: result.transferCode },
     });
   });
 }
