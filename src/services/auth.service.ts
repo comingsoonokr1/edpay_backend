@@ -73,13 +73,29 @@ export class AuthService {
     await user.save();
   }
 
-  static async refreshToken(refreshToken: string) {
-    const user = await User.findOne({ refreshToken });
-    if (!user) throw new ApiError(401, "Invalid refresh token");
+ static async refreshToken(refreshToken: string) {
+  const user = await User.findOne({ refreshToken });
+  if (!user) throw new ApiError(401, "Invalid refresh token");
 
-    const accessToken = TokenService.generateAccessToken({ userId: user._id.toString(), role: user.role });
-    return accessToken;
-  }
+  const userId = user._id.toString();
+
+  const accessToken = TokenService.generateAccessToken({
+    userId,
+    role: user.role,
+  });
+
+  const newRefreshToken = TokenService.generateRefreshToken(userId);
+
+  // ROTATE refresh token
+  user.refreshToken = newRefreshToken;
+  await user.save();
+
+  return {
+    accessToken,
+    refreshToken: newRefreshToken,
+  };
+}
+
 
   static async forgotPassword(email: string) {
     const user = await User.findOne({ email });
