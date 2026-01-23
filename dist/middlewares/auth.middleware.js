@@ -5,7 +5,6 @@ export const authMiddleware = (req, res, next) => {
     if (!authHeader)
         throw new ApiError(401, "Unauthorized");
     const token = authHeader.split(" ")[1];
-    console.log(token);
     try {
         const decoded = TokenService.verifyAccessToken(token);
         req.user = decoded;
