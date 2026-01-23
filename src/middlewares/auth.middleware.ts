@@ -14,8 +14,6 @@ export const authMiddleware = (
 
   const token = authHeader.split(" ")[1];
 
-  console.log(token);
-
   try {
      const decoded = TokenService.verifyAccessToken(token);
      
