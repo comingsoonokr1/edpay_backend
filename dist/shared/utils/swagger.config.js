@@ -10,7 +10,7 @@ const options = {
         },
         // servers: [
         //   {
-        //     url: "https://edpay-backend.onrender.com/api",
+        //     url: "https://edpaybackend-production.up.railway.app/api",
         //     description: "Production server",
         //   },
         // ],

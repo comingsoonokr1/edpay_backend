@@ -30,7 +30,7 @@ const UserSchema = new mongoose.Schema({
     emailOtpExpiry: {
         type: Date,
     },
-    isEmailVerified: {
+    isPhoneVerified: {
         type: Boolean,
         default: false
     },
