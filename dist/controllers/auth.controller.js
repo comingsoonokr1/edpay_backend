@@ -34,7 +34,7 @@ AuthController.refreshToken = asyncHandler(async (req, res) => {
     const accessToken = await AuthService.refreshToken(refreshToken);
     res.status(200).json({
         success: true,
-        data: { accessToken },
+        data: { accessToken, refreshToken },
     });
 });
 AuthController.forgotPassword = asyncHandler(async (req, res) => {

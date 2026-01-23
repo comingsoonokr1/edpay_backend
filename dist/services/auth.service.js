@@ -27,7 +27,7 @@ export class AuthService {
             phoneNumber,
             emailOtp: hashedOtp,
             emailOtpExpiry: new Date(Date.now() + 10 * 60 * 1000), //10 mins 
-            isEmailVerified: false
+            isPhoneVerified: false
         });
         // Wallet creation should be done separately in WalletService or controller
         return user;
@@ -39,9 +39,6 @@ export class AuthService {
         const isValid = await comparePassword(password, user.password);
         if (!isValid)
             throw new ApiError(401, "Invalid credentials");
-        if (!user.isEmailVerified) {
-            throw new ApiError(403, "Please verify your email first");
-        }
         const userId = user._id.toString();
         const accessToken = TokenService.generateAccessToken({ userId, role: user.role });
         const refreshToken = TokenService.
@@ -61,8 +58,19 @@ export class AuthService {
         const user = await User.findOne({ refreshToken });
         if (!user)
             throw new ApiError(401, "Invalid refresh token");
-        const accessToken = TokenService.generateAccessToken({ userId: user._id.toString(), role: user.role });
-        return accessToken;
+        const userId = user._id.toString();
+        const accessToken = TokenService.generateAccessToken({
+            userId,
+            role: user.role,
+        });
+        const newRefreshToken = TokenService.generateRefreshToken(userId);
+        // ROTATE refresh token
+        user.refreshToken = newRefreshToken;
+        await user.save();
+        return {
+            accessToken,
+            refreshToken: newRefreshToken,
+        };
     }
     static async forgotPassword(email) {
         const user = await User.findOne({ email });
@@ -98,7 +106,7 @@ export class AuthService {
         });
         if (!user)
             throw new ApiError(401, "Invalid or expired OTP");
-        user.isEmailVerified = true;
+        user.isPhoneVerified = true;
         user.emailOtp = undefined;
         user.emailOtpExpiry = undefined;
         await user.save();
