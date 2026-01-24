@@ -4,45 +4,75 @@ import { hashPassword, comparePassword } from "../shared/helpers/password.helper
 import crypto from "crypto";
 import { TokenService } from "./token.service.js";
 import { generateOTP, hashOTP } from "../shared/helpers/otp.helpers.js";
-import { sendOTPEmail } from "../shared/helpers/email.helper.js";
+import { Wallet } from "../model/Wallet.model.js";
+import mongoose from "mongoose";
+import { sendOTPSMS } from "../shared/helpers/otp.helper.js";
 
 
 
 export class AuthService {
-  static async register(fullName: string, email: string, password: string, phoneNumber: string) {
+  static async register(
+    fullName: string,
+    email: string,
+    password: string,
+    phoneNumber: string
+  ) {
     const exists = await User.findOne({ email });
     if (exists) throw new ApiError(403, "User already exists");
 
-    const hashedPassword = await hashPassword(password);
-    const otp = generateOTP();
-    const hashedOtp = hashOTP(otp);
+    const session = await mongoose.startSession();
+    session.startTransaction();
 
     try {
-      await sendOTPEmail(email, otp);
-    } catch (error) {
-      console.error("OTP email failed:", error);
+      const hashedPassword = await hashPassword(password);
+      const otp = generateOTP();
+      const hashedOtp = hashOTP(otp);
 
-      throw new ApiError(
-        500,
-        "Unable to send OTP email. Please try again later"
+      try {
+        await sendOTPSMS(phoneNumber, otp);
+      } catch (error) {
+        console.error("SMS OTP failed:", error);
+        throw new ApiError(500, "Unable to send OTP SMS");
+      }
+
+      const user = await User.create(
+        [
+          {
+            fullName,
+            email,
+            password: hashedPassword,
+            phoneNumber,
+            phoneOtp: hashedOtp,
+            phoneOtpExpiry: new Date(Date.now() + 10 * 60 * 1000),
+            isPhoneVerified: false,
+
+          },
+        ],
+        { session }
       );
+
+      await Wallet.create(
+        [
+          {
+            userId: user[0]._id,
+            balance: 0,
+            reservedBalance: 0,
+            currency: "NGN",
+          },
+        ],
+        { session }
+      );
+
+      await session.commitTransaction();
+      return user[0];
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      session.endSession();
     }
-
-
-    const user = await User.create({
-      fullName,
-      email,
-      password: hashedPassword,
-      phoneNumber,
-      emailOtp: hashedOtp,
-      emailOtpExpiry: new Date(Date.now() + 10 * 60 * 1000), //10 mins 
-      isPhoneVerified: false
-    });
-
-    // Wallet creation should be done separately in WalletService or controller
-
-    return user;
   }
+
 
   static async login(email: string, password: string) {
     const user = await User.findOne({ email });
@@ -51,6 +81,16 @@ export class AuthService {
     const isValid = await comparePassword(password, user.password);
     if (!isValid) throw new ApiError(401, "Invalid credentials");
 
+     if (!user.isPhoneVerified) {
+    //  Re-send OTP safely (rate-limited inside)
+    await AuthService.resendOTP(user.phoneNumber);
+
+    // Stop login flow here
+    throw new ApiError(403, JSON.stringify({
+    code: "PHONE_NOT_VERIFIED",
+    phoneNumber: user.phoneNumber,
+  }));
+  }
 
     const userId = user._id.toString();
 
@@ -73,28 +113,28 @@ export class AuthService {
     await user.save();
   }
 
- static async refreshToken(refreshToken: string) {
-  const user = await User.findOne({ refreshToken });
-  if (!user) throw new ApiError(401, "Invalid refresh token");
+  static async refreshToken(refreshToken: string) {
+    const user = await User.findOne({ refreshToken });
+    if (!user) throw new ApiError(401, "Invalid refresh token");
 
-  const userId = user._id.toString();
+    const userId = user._id.toString();
 
-  const accessToken = TokenService.generateAccessToken({
-    userId,
-    role: user.role,
-  });
+    const accessToken = TokenService.generateAccessToken({
+      userId,
+      role: user.role,
+    });
 
-  const newRefreshToken = TokenService.generateRefreshToken(userId);
+    const newRefreshToken = TokenService.generateRefreshToken(userId);
 
-  // ROTATE refresh token
-  user.refreshToken = newRefreshToken;
-  await user.save();
+    // ROTATE refresh token
+    user.refreshToken = newRefreshToken;
+    await user.save();
 
-  return {
-    accessToken,
-    refreshToken: newRefreshToken,
-  };
-}
+    return {
+      accessToken,
+      refreshToken: newRefreshToken,
+    };
+  }
 
 
   static async forgotPassword(email: string) {
@@ -127,69 +167,80 @@ export class AuthService {
     await user.save();
   }
 
-  static async verifyEmailOTP(email: string, otp: string) {
+  static async verifyPhoneOTP(phoneNumber: string, otp: string) {
+    const user = await User.findOne({ phoneNumber });
+    if (!user) throw new ApiError(404, "User not found");
+
+    if (!user.phoneOtp || !user.phoneOtpExpiry)
+      throw new ApiError(400, "No OTP found");
+
+    if (user.phoneOtpExpiry < new Date())
+      throw new ApiError(400, "OTP expired");
+
     const hashedOtp = hashOTP(otp);
 
-    const user = await User.findOne({
-      email,
-      emailOtp: hashedOtp,
-      emailOtpExpiry: { $gt: new Date() },
-    });
-
-    if (!user) throw new ApiError(401, "Invalid or expired OTP");
+    if (hashedOtp !== user.phoneOtp)
+      throw new ApiError(400, "Invalid OTP");
 
     user.isPhoneVerified = true;
-    user.emailOtp = undefined;
-    user.emailOtpExpiry = undefined;
+    user.phoneOtp = undefined;
+    user.phoneOtpExpiry = undefined;
 
     await user.save();
+
+    return { message: "Phone number verified successfully" };
   }
 
-  static async resendOTP(email: string) {
-  const user = await User.findOne({ email });
-  if (!user) throw new ApiError(404, "User not found");
 
-  // Optional: limit resend attempts e.g max 5 times per day
-  if (user.otpResendLimit && user.otpResendLimit >= 5) {
-    throw new ApiError(429, "Maximum OTP resend attempts reached");
-  }
+  static async resendOTP(phoneNumber: string) {
+    const user = await User.findOne({ phoneNumber });
+    if (!user) throw new ApiError(404, "User not found");
 
-  // Cooldown between resends (e.g 1 min)
-  const now = new Date();
-  if (user.otpResendTimestamp) {
-    const diff = (now.getTime() - user.otpResendTimestamp.getTime()) / 1000; // seconds
-    if (diff < 60) {
-      throw new ApiError(429, `Please wait ${Math.ceil(60 - diff)} seconds before resending OTP`);
+    const now = new Date();
+
+    /** ================= RATE LIMIT ================= */
+    if (user.otpResendLimit && user.otpResendLimit >= 5) {
+      throw new ApiError(429, "Maximum OTP resend attempts reached");
     }
+
+    /** ================= COOLDOWN ================= */
+    if (user.otpResendTimestamp) {
+      const diffSeconds =
+        (now.getTime() - user.otpResendTimestamp.getTime()) / 1000;
+
+      if (diffSeconds < 60) {
+        throw new ApiError(
+          429,
+          `Please wait ${Math.ceil(60 - diffSeconds)} seconds before resending OTP`
+        );
+      }
+    }
+
+    /** ================= GENERATE NEW OTP ================= */
+    const otp = generateOTP();
+    const hashedOtp = hashOTP(otp);
+
+    /** ================= UPDATE USER ================= */
+    user.phoneOtp = hashedOtp;
+    user.phoneOtpExpiry = new Date(now.getTime() + 10 * 60 * 1000); // 10 mins
+    user.otpResendTimestamp = now;
+    user.otpResendLimit = (user.otpResendLimit || 0) + 1;
+
+    await user.save();
+
+    /** ================= SEND SMS ================= */
+    try {
+      await sendOTPSMS(phoneNumber, otp);
+    } catch (error) {
+      console.error("OTP SMS resend failed:", error);
+      throw new ApiError(500, "Failed to resend OTP");
+    }
+
+    return {
+      message: "OTP resent successfully",
+    };
   }
 
-  // Generate new OTP if none or expired
-  let otp: string;
-  if (!user.emailOtp || (user.emailOtpExpiry && user.emailOtpExpiry < now)) {
-    otp = generateOTP();
-  } else {
-    otp = user.emailOtp; 
-    otp = generateOTP(); 
-  }
-
-  const hashedOtp = hashOTP(otp);
-
-  // Update user OTP data
-  user.emailOtp = hashedOtp;
-  user.emailOtpExpiry = new Date(now.getTime() + 10 * 60 * 1000); // 10 min expiry
-  user.otpResendTimestamp = now;
-  user.otpResendLimit = (user.otpResendLimit || 0) + 1;
-
-  await user.save();
-
-  try {
-    await sendOTPEmail(email, otp); // send the plain OTP
-  } catch (err) {
-    throw new ApiError(500, "Failed to send OTP email");
-  }
-
-  return { message: "OTP resent successfully" };
-}
 
 
 }

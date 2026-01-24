@@ -10,6 +10,16 @@ import { User } from "../model/User.model.js";
 
 
 export class WalletService {
+
+   static async createWallet(userId: mongoose.Types.ObjectId) {
+    return Wallet.create({
+      userId,
+      balance: 0,
+      reservedBalance: 0,
+      currency: "NGN",
+    });
+  }
+  
   static async getBalance(userId: string) {
     const wallet = await Wallet.findOne({ userId });
     if (!wallet) throw new ApiError(404, "Wallet not found");
