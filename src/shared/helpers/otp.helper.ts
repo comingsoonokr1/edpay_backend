@@ -10,8 +10,8 @@ export const sendOTPSMS = async (
 
   const payload = {
     to: formattedPhone,
-    from: "EdPay",
-    sms: `Your EdPay verification code is ${otp}. It expires in 10 minutes.`,
+    from: "EdPays",
+    sms: `Your EdPays verification code is ${otp}. It expires in 10 minutes.`,
     type: "plain",
     channel: "generic",
     api_key: process.env.TERMII_API_KEY,
