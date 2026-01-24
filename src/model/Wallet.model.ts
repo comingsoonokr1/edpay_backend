@@ -21,4 +21,6 @@ const WalletSchema = new mongoose.Schema({
     },
 }, { timestamps: true });
 
+WalletSchema.index({ userId: 1 }, { unique: true });
+
 export const Wallet = mongoose.model("Wallet", WalletSchema);

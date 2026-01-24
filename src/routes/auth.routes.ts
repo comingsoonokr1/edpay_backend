@@ -14,8 +14,8 @@ import {
   refreshTokenSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
-  verifyEmailSchema,
   resendOTPSchema,
+  verifyPhoneOTPSchema,
 } from "../schemas/auth.schema.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 
@@ -178,9 +178,9 @@ router.post(
  *         description: Invalid or expired OTP
  */
 router.post(
-  "/verify-email",
-  validate(verifyEmailSchema),
-  AuthController.verifyEmail
+  "/verify-phone",
+  validate(verifyPhoneOTPSchema),
+  AuthController.verifyPhoneOTP
 );
 
 /**

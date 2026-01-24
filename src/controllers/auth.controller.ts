@@ -56,7 +56,7 @@ export class AuthController {
     res.status(200).json({
       success: true,
       message: "Password reset token sent",
-      token, // ⚠️ remove this in production, send via email
+      token, // remove this in production, send via email
     });
   });
 
@@ -71,22 +71,25 @@ export class AuthController {
     });
   });
 
-  static verifyEmail =  asyncHandler(async (req: Request, res: Response) => {
-  const { email, otp } = req.body;
+  static verifyPhoneOTP =  asyncHandler(async (req: Request, res: Response) => {
+  const { phoneNumber, otp } = req.body;
 
-  await AuthService.verifyEmailOTP(email, otp);
+  await AuthService.verifyPhoneOTP(phoneNumber, otp);
 
   res.json({
     success: true,
-    message: "Email verified successfully",
+    message: "Phone number verified successfully",
   });
 });
 
  static resendOTP = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     try {
-      const { email } = req.body;
-      const result = await AuthService.resendOTP(email);
-      res.json(result);
+      const { phoneNumber } = req.body;
+      const result = await AuthService.resendOTP(phoneNumber);
+      res.json({
+        success: true,
+        message: "OTP resent successfully",
+      });
     } catch (err) {
       next(err);
     }

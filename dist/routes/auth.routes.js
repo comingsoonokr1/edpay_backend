@@ -2,7 +2,7 @@ import { Router } from "express";
 import { AuthController } from "../controllers/auth.controller.js";
 import { validate } from "../middlewares/validate.middleware.js";
 import { loginLimiter, registerLimiter, forgotPasswordLimiter, refreshTokenLimiter, resendOTPLimiter, } from "../middlewares/rate.middleware.js";
-import { registerSchema, loginSchema, refreshTokenSchema, forgotPasswordSchema, resetPasswordSchema, verifyEmailSchema, resendOTPSchema, } from "../schemas/auth.schema.js";
+import { registerSchema, loginSchema, refreshTokenSchema, forgotPasswordSchema, resetPasswordSchema, resendOTPSchema, verifyPhoneOTPSchema, } from "../schemas/auth.schema.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 const router = Router();
 /**
@@ -130,7 +130,7 @@ router.post("/reset-password", validate(resetPasswordSchema), AuthController.res
  *       401:
  *         description: Invalid or expired OTP
  */
-router.post("/verify-email", validate(verifyEmailSchema), AuthController.verifyEmail);
+router.post("/verify-phone", validate(verifyPhoneOTPSchema), AuthController.verifyPhoneOTP);
 /**
  * @swagger
  * /auth/resend-otp:

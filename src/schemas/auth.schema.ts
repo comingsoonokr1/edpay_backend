@@ -40,9 +40,16 @@ export const verifyEmailSchema = z.object({
   otp: z.string().length(6),
 });
 
+export const verifyPhoneOTPSchema = z.object({
+  body: z.object({
+    phoneNumber: z.string().min(1, "Phone number is required"),
+    otp: z.string().length(6),
+  }),
+});
+
 export const resendOTPSchema = z.object({
   body: z.object({
-    email: z.string().email(),
+    phoneNumber: z.string().min(1, "Phone number is required"),
   }),
 });
 

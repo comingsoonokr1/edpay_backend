@@ -43,7 +43,7 @@ AuthController.forgotPassword = asyncHandler(async (req, res) => {
     res.status(200).json({
         success: true,
         message: "Password reset token sent",
-        token, // ⚠️ remove this in production, send via email
+        token, // remove this in production, send via email
     });
 });
 AuthController.resetPassword = asyncHandler(async (req, res) => {
@@ -54,19 +54,22 @@ AuthController.resetPassword = asyncHandler(async (req, res) => {
         message: "Password reset successful",
     });
 });
-AuthController.verifyEmail = asyncHandler(async (req, res) => {
-    const { email, otp } = req.body;
-    await AuthService.verifyEmailOTP(email, otp);
+AuthController.verifyPhoneOTP = asyncHandler(async (req, res) => {
+    const { phoneNumber, otp } = req.body;
+    await AuthService.verifyPhoneOTP(phoneNumber, otp);
     res.json({
         success: true,
-        message: "Email verified successfully",
+        message: "Phone number verified successfully",
     });
 });
 AuthController.resendOTP = asyncHandler(async (req, res, next) => {
     try {
-        const { email } = req.body;
-        const result = await AuthService.resendOTP(email);
-        res.json(result);
+        const { phoneNumber } = req.body;
+        const result = await AuthService.resendOTP(phoneNumber);
+        res.json({
+            success: true,
+            message: "OTP resent successfully",
+        });
     }
     catch (err) {
         next(err);

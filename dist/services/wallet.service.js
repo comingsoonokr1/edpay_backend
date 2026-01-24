@@ -6,6 +6,14 @@ import { stripe } from "../providers/stripe.provider.js";
 import { PaystackTransferProvider } from "../providers/paystackTransaferProvider.js";
 import { User } from "../model/User.model.js";
 export class WalletService {
+    static async createWallet(userId) {
+        return Wallet.create({
+            userId,
+            balance: 0,
+            reservedBalance: 0,
+            currency: "NGN",
+        });
+    }
     static async getBalance(userId) {
         const wallet = await Wallet.findOne({ userId });
         if (!wallet)
