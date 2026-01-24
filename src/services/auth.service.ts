@@ -28,12 +28,12 @@ export class AuthService {
       const otp = generateOTP();
       const hashedOtp = hashOTP(otp);
 
-      try {
-        await sendOTPSMS(phoneNumber, otp);
-      } catch (error) {
-        console.error("SMS OTP failed:", error);
-        throw new ApiError(500, "Unable to send OTP SMS");
-      }
+      // try {
+      //   await sendOTPSMS(phoneNumber, otp);
+      // } catch (error) {
+      //   console.error("SMS OTP failed:", error);
+      //   throw new ApiError(500, "Unable to send OTP SMS");
+      // }
 
       const user = await User.create(
         [
@@ -81,16 +81,16 @@ export class AuthService {
     const isValid = await comparePassword(password, user.password);
     if (!isValid) throw new ApiError(401, "Invalid credentials");
 
-     if (!user.isPhoneVerified) {
-    //  Re-send OTP safely (rate-limited inside)
-    await AuthService.resendOTP(user.phoneNumber);
+  //    if (!user.isPhoneVerified) {
+  //   //  Re-send OTP safely (rate-limited inside)
+  //   await AuthService.resendOTP(user.phoneNumber);
 
-    // Stop login flow here
-    throw new ApiError(403, JSON.stringify({
-    code: "PHONE_NOT_VERIFIED",
-    phoneNumber: user.phoneNumber,
-  }));
-  }
+  //   // Stop login flow here
+  //   throw new ApiError(403, JSON.stringify({
+  //   code: "PHONE_NOT_VERIFIED",
+  //   phoneNumber: user.phoneNumber,
+  // }));
+  // }
 
     const userId = user._id.toString();
 
