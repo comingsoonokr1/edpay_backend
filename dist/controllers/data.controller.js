@@ -1,59 +1,50 @@
 var _a;
-import { Wallet } from "../model/Wallet.model.js";
-import { ApiError } from "../shared/errors/api.error.js";
-import { VTPassProvider } from "../providers/vtpass.provider.js";
 import { asyncHandler } from "../shared/utils/asyncHandler.js";
-import { DataSubscription } from "../model/DataSubscription.model.js";
+import { ApiError } from "../shared/errors/api.error.js";
+import { DataService } from "../services/data.service.js";
 export class DataController {
 }
 _a = DataController;
-DataController.purchaseData = asyncHandler(async (req, res) => {
-    const { userId, serviceID, planCode, phone, amount } = req.body;
-    // Check wallet balance
-    const wallet = await Wallet.findOne({ userId });
-    if (!wallet || wallet.balance < amount) {
-        throw new ApiError(400, "Insufficient wallet balance");
-    }
-    // Generate unique reference
-    const reference = `DATA-${Date.now()}`;
-    // Call VTPass purchaseData API
-    const response = await VTPassProvider.purchaseData({
-        request_id: reference,
-        serviceID,
-        billersCode: phone,
-        variation_code: planCode,
-        amount,
+DataController.getProviders = asyncHandler(async (req, res) => {
+    const providers = await DataService.getProviders();
+    res.json({
+        success: true,
+        data: providers,
     });
-    if (response.code !== "000") {
-        throw new ApiError(400, "Data purchase failed: " + response.message || "Unknown error");
+});
+DataController.getPlans = asyncHandler(async (req, res) => {
+    const { serviceID } = req.query;
+    if (!serviceID) {
+        throw new ApiError(400, "serviceID is required");
     }
-    // Debit wallet
-    wallet.balance -= amount;
-    await wallet.save();
-    // Save subscription record
-    const subscription = await DataSubscription.create({
+    const plans = await DataService.getPlans(serviceID);
+    res.json({
+        success: true,
+        data: plans,
+    });
+});
+DataController.purchaseData = asyncHandler(async (req, res) => {
+    const { serviceID, planId, phone } = req.body;
+    const userId = req.user?.userId;
+    if (!userId) {
+        throw new ApiError(401, "Unauthorized");
+    }
+    const transaction = await DataService.purchaseData({
         userId,
         serviceID,
-        planCode,
+        planId,
         phone,
-        amount,
-        reference,
-        status: "success",
-        meta: response,
     });
     res.status(201).json({
         success: true,
-        data: subscription,
+        data: transaction,
     });
 });
 DataController.getStatus = asyncHandler(async (req, res) => {
-    const { reference } = req.params;
-    const subscription = await DataSubscription.findOne({ reference });
-    if (!subscription) {
-        throw new ApiError(404, "Data subscription not found");
-    }
+    const reference = req.params.reference;
+    const transaction = await DataService.getStatus(reference);
     res.status(200).json({
         success: true,
-        data: subscription,
+        data: transaction,
     });
 });
