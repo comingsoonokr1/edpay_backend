@@ -12,11 +12,31 @@ export class DataService {
         ];
     }
     static async getPlans(serviceID) {
-        const response = await VTPassProvider.getDataPlans(serviceID);
-        if (response.code !== "000") {
-            throw new ApiError(400, "Unable to fetch data plans");
+        // Map frontend IDs to VTpass service IDs
+        const serviceMap = {
+            "mtn-data": "mtn-data",
+            "airtel-data": "airtel-data",
+            "glo-data": "glo", //  VTpass uses "glo", not "glo-data"
+            "9mobile-data": "etisalat-data",
+        };
+        const mappedServiceID = serviceMap[serviceID];
+        if (!mappedServiceID) {
+            throw new ApiError(400, "Invalid service ID");
         }
-        return response.content?.variations || [];
+        let response;
+        try {
+            response = await VTPassProvider.getDataPlans(mappedServiceID);
+        }
+        catch (error) {
+            console.error("VTpass request failed:", error?.response?.data || error);
+            throw new ApiError(500, "Data provider unavailable");
+        }
+        // Log provider response if something goes wrong
+        if (response?.code !== "000") {
+            console.error("VTpass error response:", response);
+            throw new ApiError(400, response?.response_description || "Unable to fetch data plans");
+        }
+        return response.content?.variations ?? [];
     }
     static async purchaseData(data) {
         // Fetch plans server-side
