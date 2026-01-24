@@ -11,5 +11,5 @@ export const sendOTPSMS = async (phoneNumber, otp) => {
         channel: "generic",
         api_key: process.env.TERMII_API_KEY,
     };
-    await axios.post("https://api.ng.termii.com/api/sms/send", payload);
+    await axios.post("https://v3.api.termii.com/api/sms/send", payload);
 };

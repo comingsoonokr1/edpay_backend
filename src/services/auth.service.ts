@@ -17,7 +17,7 @@ export class AuthService {
     password: string,
     phoneNumber: string
   ) {
-    const exists = await User.findOne({ email });
+    const exists = await User.findOne({ phoneNumber });
     if (exists) throw new ApiError(403, "User already exists");
 
     const session = await mongoose.startSession();
