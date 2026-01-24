@@ -17,6 +17,79 @@ router.use(authMiddleware);
 
 /**
  * @swagger
+ * /data/providers:
+ *   get:
+ *     summary: Get list of data providers
+ *     tags: [Data]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of providers
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   code:
+ *                     type: string
+ *                     example: mtn-data
+ *                   name:
+ *                     type: string
+ *                     example: MTN Data
+ *       401:
+ *         description: Unauthorized
+ */
+router.get(
+  "/providers",
+  DataController.getProviders
+);
+
+/**
+ * @swagger
+ * /data/plans:
+ *   get:
+ *     summary: Get data plans for a provider
+ *     tags: [Data]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: query
+ *         name: serviceID
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: mtn-data
+ *     responses:
+ *       200:
+ *         description: List of data plans
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   variation_code:
+ *                     type: string
+ *                   name:
+ *                     type: string
+ *                   variation_amount:
+ *                     type: string
+ *       400:
+ *         description: Invalid request
+ *       401:
+ *         description: Unauthorized
+ */
+router.get(
+  "/plans",
+  DataController.getPlans
+);
+
+/**
+ * @swagger
  * /data/purchase:
  *   post:
  *     summary: Purchase mobile data
