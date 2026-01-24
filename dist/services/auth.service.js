@@ -9,7 +9,7 @@ import mongoose from "mongoose";
 import { sendOTPSMS } from "../shared/helpers/otp.helper.js";
 export class AuthService {
     static async register(fullName, email, password, phoneNumber) {
-        const exists = await User.findOne({ email });
+        const exists = await User.findOne({ phoneNumber });
         if (exists)
             throw new ApiError(403, "User already exists");
         const session = await mongoose.startSession();

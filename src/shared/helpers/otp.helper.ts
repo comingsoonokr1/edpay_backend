@@ -18,7 +18,7 @@ export const sendOTPSMS = async (
   };
 
   await axios.post(
-    "https://api.ng.termii.com/api/sms/send",
+    "https://v3.api.termii.com/api/sms/send",
     payload
   );
 };
