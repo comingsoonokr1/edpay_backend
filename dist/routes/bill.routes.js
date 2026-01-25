@@ -2,6 +2,7 @@ import { Router } from "express";
 import { BillController } from "../controllers/bill.controller.js";
 import { validate } from "../middlewares/validate.middleware.js";
 import { billStatusSchema, payBillSchema, } from "../schemas/bill.schema.js";
+import { authMiddleware } from "../middlewares/auth.middleware.js";
 const router = Router();
 /**
  * @swagger
@@ -9,7 +10,7 @@ const router = Router();
  *   name: Bills
  *   description: Bill payments and bill management
  */
-// router.use(authMiddleware);
+router.use(authMiddleware);
 /**
  * @swagger
  * /bills/providers:

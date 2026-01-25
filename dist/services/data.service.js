@@ -51,7 +51,9 @@ export class DataService {
     static async purchaseData(data) {
         // Fetch plans server-side
         const plans = await this.getPlans(data.serviceID);
+        console.log(plans);
         const plan = plans.find((p) => p.variation_code === data.planId);
+        console.log(plan);
         if (!plan) {
             throw new ApiError(400, "Invalid data plan selected");
         }

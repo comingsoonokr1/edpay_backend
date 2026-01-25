@@ -74,7 +74,10 @@ static async getPlans(serviceID: string) {
   }) {
     // Fetch plans server-side
     const plans = await this.getPlans(data.serviceID);
+    console.log(plans);
     const plan = plans.find((p: any) => p.variation_code === data.planId);
+
+    console.log(plan);
 
     if (!plan) {
       throw new ApiError(400, "Invalid data plan selected");

@@ -123,7 +123,7 @@ router.get(
  */
 router.post(
   "/purchase",
-  validate(dataPurchaseSchema),
+  // validate(dataPurchaseSchema),
   DataController.purchaseData
 );
 
