@@ -1,11 +1,16 @@
 var _a;
 import { BillService } from "../services/bill.service.js";
 import { asyncHandler } from "../shared/utils/asyncHandler.js";
+import { ApiError } from "../shared/errors/api.error.js";
 export class BillController {
 }
 _a = BillController;
-BillController.getProviders = asyncHandler(async (_req, res) => {
-    const providers = await BillService.getProviders();
+BillController.getProviders = asyncHandler(async (req, res) => {
+    const { category } = req.query;
+    if (!category) {
+        throw new ApiError(400, "Category is required");
+    }
+    const providers = await BillService.getProviders(category);
     res.status(200).json({
         success: true,
         data: providers,

@@ -26,4 +26,17 @@ export class VTPassProvider {
         const { data } = await axiosInstance.post("/pay", payload);
         return data;
     }
+    static async getCategoryBillers(category) {
+        // Map your category to VTpass expected API category identifiers
+        const categoryMap = {
+            tv: "tv-subscription",
+            electricity: "electricity-bill", // Note: Corrected from "electricity-bills" to "electricity-bill" based on VTpass docs
+        };
+        const vtpassCategory = categoryMap[category];
+        if (!vtpassCategory) {
+            throw new Error("Invalid category");
+        }
+        const { data } = await axiosInstance.get(`/services?identifier=${vtpassCategory}`);
+        return data;
+    }
 }

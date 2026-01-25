@@ -1,16 +1,21 @@
 import { Request, Response } from "express";
 import { BillService } from "../services/bill.service.js";
 import { asyncHandler } from "../shared/utils/asyncHandler.js";
+import { ApiError } from "../shared/errors/api.error.js";
 
 export class BillController {
-  static getProviders = asyncHandler( async (_req: Request, res: Response) => {
-    const providers = await BillService.getProviders();
+ static getProviders = asyncHandler( async (req: Request, res: Response) => {
+  const { category } = req.query as { category: "tv" | "electricity" };
+  if (!category) {
+    throw new ApiError(400, "Category is required");
+  }
+  const providers = await BillService.getProviders(category);
 
-    res.status(200).json({
-      success: true,
-      data: providers,
-    });
+  res.status(200).json({
+    success: true,
+    data: providers,
   });
+});
 
   static payBill = asyncHandler( async (req: Request, res: Response) => {
     const userId = req.user!.userId;
