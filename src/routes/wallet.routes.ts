@@ -3,7 +3,6 @@ import { WalletController } from "../controllers/wallet.controller.js";
 import { validate } from "../middlewares/validate.middleware.js";
 import {
   fundWalletSchema,
-  transferSchema,
   withdrawSchema,
 } from "../schemas/wallet.schema.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
@@ -162,7 +161,7 @@ router.post(
  */
 router.post(
   "/transfer",
-  validate(transferSchema),
+  // validate(transferSchema),
   WalletController.transfer
 );
 
