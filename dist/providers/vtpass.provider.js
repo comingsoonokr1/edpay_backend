@@ -31,7 +31,7 @@ export class VTPassProvider {
         const categoryMap = {
             tv: "tv-subscription",
             electricity: "electricity-bill",
-            education: "bill-payment"
+            education: "education"
         };
         const vtpassCategory = categoryMap[category];
         if (!vtpassCategory) {
