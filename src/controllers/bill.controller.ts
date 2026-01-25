@@ -5,7 +5,7 @@ import { ApiError } from "../shared/errors/api.error.js";
 
 export class BillController {
  static getProviders = asyncHandler( async (req: Request, res: Response) => {
-  const { category } = req.query as { category: "tv" | "electricity" };
+  const { category } = req.query as { category: "tv" | "electricity" | "education" };
   if (!category) {
     throw new ApiError(400, "Category is required");
   }

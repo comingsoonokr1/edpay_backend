@@ -39,11 +39,13 @@ export class VTPassProvider {
     return data;
   }
 
-   static async getCategoryBillers(category: "tv" | "electricity") {
+   static async getCategoryBillers(category: "tv" | "electricity" | "education") {
     // Map your category to VTpass expected API category identifiers
     const categoryMap: Record<string, string> = {
       tv: "tv-subscription",
-      electricity: "electricity-bill", // Note: Corrected from "electricity-bills" to "electricity-bill" based on VTpass docs
+      electricity: "electricity-bill",
+      education: "education-bill"
+
     };
 
     const vtpassCategory = categoryMap[category];

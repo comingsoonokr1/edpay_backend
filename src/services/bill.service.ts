@@ -5,7 +5,7 @@ import { ApiError } from "../shared/errors/api.error.js";
 
 export class BillService {
   // Get providers by category (tv or electricity)
-  static async getProviders(category: "tv" | "electricity") {
+  static async getProviders(category: "tv" | "electricity" | "education") {
     const response = await VTPassProvider.getCategoryBillers(category);
 
     console.log(response);
