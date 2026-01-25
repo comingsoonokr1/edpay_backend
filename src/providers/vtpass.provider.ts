@@ -44,7 +44,7 @@ export class VTPassProvider {
     const categoryMap: Record<string, string> = {
       tv: "tv-subscription",
       electricity: "electricity-bill",
-      education: "education-bill"
+      education: "bill-payment"
 
     };
 
