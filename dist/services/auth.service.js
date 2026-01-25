@@ -8,7 +8,17 @@ import { Wallet } from "../model/Wallet.model.js";
 import mongoose from "mongoose";
 import { sendOTPSMS } from "../shared/helpers/otp.helper.js";
 export class AuthService {
+    // Inside AuthService.ts
+    static validateAndFormatPhone(phoneNumber) {
+        const cleanPhone = phoneNumber.replace(/\s+/g, "").replace("+", "");
+        const nigerianFormatRegex = /^[1-9]\d{10,14}$/; // No '+' at the start
+        if (!nigerianFormatRegex.test(cleanPhone)) {
+            throw new ApiError(400, "Invalid phone format. Use international format without '+' (e.g., 2348012345678)");
+        }
+        return cleanPhone;
+    }
     static async register(fullName, email, password, phoneNumber) {
+        const formattedPhone = this.validateAndFormatPhone(phoneNumber);
         const exists = await User.findOne({ phoneNumber });
         if (exists)
             throw new ApiError(403, "User already exists");
@@ -29,7 +39,7 @@ export class AuthService {
                     fullName,
                     email,
                     password: hashedPassword,
-                    phoneNumber,
+                    phoneNumber: formattedPhone,
                     phoneOtp: hashedOtp,
                     phoneOtpExpiry: new Date(Date.now() + 10 * 60 * 1000),
                     isPhoneVerified: false,
@@ -146,7 +156,8 @@ export class AuthService {
         return { message: "Phone number verified successfully" };
     }
     static async resendOTP(phoneNumber) {
-        const user = await User.findOne({ phoneNumber });
+        const formattedPhone = this.validateAndFormatPhone(phoneNumber);
+        const user = await User.findOne({ phoneNumber: formattedPhone });
         if (!user)
             throw new ApiError(404, "User not found");
         const now = new Date();
@@ -172,7 +183,7 @@ export class AuthService {
         await user.save();
         /** ================= SEND SMS ================= */
         try {
-            await sendOTPSMS(phoneNumber, otp);
+            await sendOTPSMS(formattedPhone, otp);
         }
         catch (error) {
             console.error("OTP SMS resend failed:", error);

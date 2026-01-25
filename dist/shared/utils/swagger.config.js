@@ -8,6 +8,12 @@ const options = {
             version: "1.0.0",
             description: "EDPay API Documentation",
         },
+        servers: [
+            {
+                url: "http://127.0.0.1:5001/api", // Add your local base path here
+                description: "Local server",
+            },
+        ],
         // servers: [
         //   {
         //     url: "https://edpaybackend-production.up.railway.app/api",
