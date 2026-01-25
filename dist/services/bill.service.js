@@ -6,7 +6,8 @@ export class BillService {
     // Get providers by category (tv or electricity)
     static async getProviders(category) {
         const response = await VTPassProvider.getCategoryBillers(category);
-        if (response.code !== "000") {
+        console.log(response);
+        if (response.response_description !== "000") {
             throw new ApiError(400, "Unable to fetch providers");
         }
         return response.content.map((item) => ({
