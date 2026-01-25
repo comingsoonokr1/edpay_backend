@@ -18,7 +18,7 @@ static async getPlans(serviceID: string) {
   const serviceMap: Record<string, string> = {
     "mtn-data": "mtn-data",
     "airtel-data": "airtel-data",
-    "glo-data": "glo", //  VTpass uses "glo", not "glo-data"
+    "glo-data": "glo-data", // VTpass uses "glo"
     "9mobile-data": "etisalat-data",
   };
 
@@ -33,11 +33,17 @@ static async getPlans(serviceID: string) {
     response = await VTPassProvider.getDataPlans(mappedServiceID);
   } catch (error: any) {
     console.error("VTpass request failed:", error?.response?.data || error);
-    throw new ApiError(500, "Data provider unavailable");
+    throw new ApiError(503, "Data provider unavailable");
   }
 
-  // Log provider response if something goes wrong
-  if (response?.code !== "000") {
+  console.log("VTpass response:", response);
+
+  // Correct success check (VTpass data endpoint)
+  const isSuccess =
+    response?.response_description === "000" ||
+    response?.code === "000";
+
+  if (!isSuccess) {
     console.error("VTpass error response:", response);
     throw new ApiError(
       400,
@@ -45,8 +51,19 @@ static async getPlans(serviceID: string) {
     );
   }
 
-  return response.content?.variations ?? [];
+  //  Handle VTpass typo
+  const variations =
+    response?.content?.variations ||
+    response?.content?.varations ||
+    [];
+
+  if (!variations.length) {
+    throw new ApiError(404, "No data plans available");
+  }
+
+  return variations;
 }
+
 
 
   static async purchaseData(data: {

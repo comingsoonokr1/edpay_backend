@@ -11,12 +11,29 @@ import { sendOTPSMS } from "../shared/helpers/otp.helper.js";
 
 
 export class AuthService {
+// Inside AuthService.ts
+
+private static validateAndFormatPhone(phoneNumber: string): string {
+  const cleanPhone = phoneNumber.replace(/\s+/g, "").replace("+", ""); 
+  const nigerianFormatRegex = /^[1-9]\d{10,14}$/; // No '+' at the start
+
+  if (!nigerianFormatRegex.test(cleanPhone)) {
+    throw new ApiError(
+      400,
+      "Invalid phone format. Use international format without '+' (e.g., 2348012345678)"
+    );
+  }
+  return cleanPhone;
+}
+
   static async register(
     fullName: string,
     email: string,
     password: string,
     phoneNumber: string
   ) {
+    
+    const formattedPhone = this.validateAndFormatPhone(phoneNumber);
     const exists = await User.findOne({ phoneNumber });
     if (exists) throw new ApiError(403, "User already exists");
 
@@ -35,17 +52,16 @@ export class AuthService {
       //   throw new ApiError(500, "Unable to send OTP SMS");
       // }
 
-      const user = await User.create(
+    const user = await User.create(
         [
           {
             fullName,
             email,
             password: hashedPassword,
-            phoneNumber,
+            phoneNumber: formattedPhone,
             phoneOtp: hashedOtp,
             phoneOtpExpiry: new Date(Date.now() + 10 * 60 * 1000),
             isPhoneVerified: false,
-
           },
         ],
         { session }
@@ -192,11 +208,12 @@ export class AuthService {
   }
 
 
-  static async resendOTP(phoneNumber: string) {
-    const user = await User.findOne({ phoneNumber });
+static async resendOTP(phoneNumber: string) {
+    const formattedPhone = this.validateAndFormatPhone(phoneNumber);
+    const user = await User.findOne({ phoneNumber: formattedPhone });
     if (!user) throw new ApiError(404, "User not found");
 
-    const now = new Date();
+      const now = new Date();
 
     /** ================= RATE LIMIT ================= */
     if (user.otpResendLimit && user.otpResendLimit >= 5) {
@@ -230,7 +247,7 @@ export class AuthService {
 
     /** ================= SEND SMS ================= */
     try {
-      await sendOTPSMS(phoneNumber, otp);
+      await sendOTPSMS(formattedPhone, otp);
     } catch (error) {
       console.error("OTP SMS resend failed:", error);
       throw new ApiError(500, "Failed to resend OTP");

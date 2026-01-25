@@ -14,7 +14,7 @@ export class CardService {
     const exists = await Card.findOne({
       userId,
       last4: paymentMethod.card?.last4,
-      cardBrand: paymentMethod.card?.brand,
+      cardBrand: paymentMethod.card?.brand, 
     });
 
     if (exists) {
