@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { WalletController } from "../controllers/wallet.controller.js";
 import { validate } from "../middlewares/validate.middleware.js";
-import { fundWalletSchema, transferSchema, withdrawSchema, } from "../schemas/wallet.schema.js";
+import { fundWalletSchema, withdrawSchema, } from "../schemas/wallet.schema.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 const router = Router();
 /**
@@ -140,5 +140,7 @@ router.post("/withdraw", validate(withdrawSchema), WalletController.withdraw);
  *       401:
  *         description: Unauthorized
  */
-router.post("/transfer", validate(transferSchema), WalletController.transfer);
+router.post("/transfer", 
+// validate(transferSchema),
+WalletController.transfer);
 export default router;
