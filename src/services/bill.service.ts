@@ -8,7 +8,10 @@ export class BillService {
   static async getProviders(category: "tv" | "electricity") {
     const response = await VTPassProvider.getCategoryBillers(category);
 
-    if (response.code !== "000") {
+    console.log(response);
+    
+
+    if (response.response_description !== "000") {
       throw new ApiError(400, "Unable to fetch providers");
     }
 
