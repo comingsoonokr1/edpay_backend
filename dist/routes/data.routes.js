@@ -1,7 +1,5 @@
 import { Router } from "express";
 import { DataController } from "../controllers/data.controller.js";
-import { validate } from "../middlewares/validate.middleware.js";
-import { dataPurchaseSchema } from "../schemas/data.schema.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 const router = Router();
 /**
@@ -109,7 +107,9 @@ router.get("/plans", DataController.getPlans);
  *       401:
  *         description: Unauthorized
  */
-router.post("/purchase", validate(dataPurchaseSchema), DataController.purchaseData);
+router.post("/purchase", 
+// validate(dataPurchaseSchema),
+DataController.purchaseData);
 /**
  * @swagger
  * /data/status/{reference}:
