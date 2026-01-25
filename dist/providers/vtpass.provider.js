@@ -30,7 +30,8 @@ export class VTPassProvider {
         // Map your category to VTpass expected API category identifiers
         const categoryMap = {
             tv: "tv-subscription",
-            electricity: "electricity-bill", // Note: Corrected from "electricity-bills" to "electricity-bill" based on VTpass docs
+            electricity: "electricity-bill",
+            education: "education-bill"
         };
         const vtpassCategory = categoryMap[category];
         if (!vtpassCategory) {
