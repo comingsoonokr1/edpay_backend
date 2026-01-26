@@ -55,7 +55,6 @@ AuthController.resetPassword = asyncHandler(async (req, res) => {
         message: "Password reset successful",
     });
 });
-<<<<<<< HEAD
 AuthController.verifyPhone = asyncHandler(async (req, res) => {
     const { phoneNumber, idToken } = req.body;
     if (!phoneNumber || !idToken) {
@@ -67,26 +66,3 @@ AuthController.verifyPhone = asyncHandler(async (req, res) => {
         message: result.message,
     });
 });
-=======
-AuthController.verifyPhoneOTP = asyncHandler(async (req, res) => {
-    const { phoneNumber, otp } = req.body;
-    await AuthService.verifyPhoneOTP(phoneNumber, otp);
-    res.json({
-        success: true,
-        message: "Phone number verified successfully",
-    });
-});
-AuthController.resendOTP = asyncHandler(async (req, res, next) => {
-    try {
-        const { phoneNumber } = req.body;
-        const result = await AuthService.resendOTP(phoneNumber);
-        res.json({
-            success: true,
-            message: "OTP resent successfully",
-        });
-    }
-    catch (err) {
-        next(err);
-    }
-});
->>>>>>> f6806fc49d2d7a49e2924cdf0dafcb8929dac3f7
