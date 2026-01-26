@@ -72,11 +72,35 @@ export class AuthController {
     });
   });
 
+<<<<<<< HEAD
   static verifyPhone = asyncHandler(async (req: Request, res: Response) => {
     const { phoneNumber, idToken } = req.body;
 
     if (!phoneNumber || !idToken) {
       throw new ApiError(400, "Phone number and verification token are required");
+=======
+  static verifyPhoneOTP =  asyncHandler(async (req: Request, res: Response) => {
+  const { phoneNumber, otp } = req.body;
+
+  await AuthService.verifyPhoneOTP(phoneNumber, otp);
+
+  res.json({
+    success: true,
+    message: "Phone number verified successfully",
+  });
+});
+
+ static resendOTP = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+    try {
+      const { phoneNumber } = req.body;
+      const result = await AuthService.resendOTP(phoneNumber);
+      res.json({
+        success: true,
+        message: "OTP resent successfully",
+      });
+    } catch (err) {
+      next(err);
+>>>>>>> f6806fc49d2d7a49e2924cdf0dafcb8929dac3f7
     }
 
     const result = await AuthService.verifyPhone(phoneNumber, idToken);

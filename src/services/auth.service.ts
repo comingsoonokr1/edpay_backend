@@ -18,6 +18,26 @@ export class AuthService {
         400,
         "Invalid phone format. Use international format without '+' (e.g., 2348012345678)"
       );
+ 
+      await Wallet.create(
+        [
+          {
+            userId: user[0]._id,
+            balance: 0,
+            reservedBalance: 0,
+            currency: "NGN",
+          },
+        ],
+        { session }
+      );
+
+      await session.commitTransaction();
+      return user[0];
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      session.endSession();
     }
     return cleanPhone;
   }
@@ -74,6 +94,7 @@ export class AuthService {
       session.endSession();
     }
   }
+
 
   static async login(email: string, password: string) {
     const user = await User.findOne({ email });
@@ -133,6 +154,7 @@ export class AuthService {
     };
   }
 
+
   static async forgotPassword(email: string) {
     const user = await User.findOne({ email });
     if (!user) throw new ApiError(404, "User not found");
@@ -190,5 +212,42 @@ export class AuthService {
       console.error("Firebase verification error:", error);
       throw new ApiError(401, "Invalid or expired verification token");
     }
+
+    /** ================= COOLDOWN ================= */
+    if (user.otpResendTimestamp) {
+      const diffSeconds =
+        (now.getTime() - user.otpResendTimestamp.getTime()) / 1000;
+
+      if (diffSeconds < 60) {
+        throw new ApiError(
+          429,
+          `Please wait ${Math.ceil(60 - diffSeconds)} seconds before resending OTP`
+        );
+      }
+    }
+
+    /** ================= GENERATE NEW OTP ================= */
+    const otp = generateOTP();
+    const hashedOtp = hashOTP(otp);
+
+    /** ================= UPDATE USER ================= */
+    user.phoneOtp = hashedOtp;
+    user.phoneOtpExpiry = new Date(now.getTime() + 10 * 60 * 1000); // 10 mins
+    user.otpResendTimestamp = now;
+    user.otpResendLimit = (user.otpResendLimit || 0) + 1;
+
+    await user.save();
+
+    /** ================= SEND SMS ================= */
+    try {
+      await sendOTPSMS(formattedPhone, otp);
+    } catch (error) {
+      console.error("OTP SMS resend failed:", error);
+      throw new ApiError(500, "Failed to resend OTP");
+    }
+
+    return {
+      message: "OTP resent successfully",
+    };
   }
 }
