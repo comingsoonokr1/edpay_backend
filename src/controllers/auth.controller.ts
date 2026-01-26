@@ -1,12 +1,13 @@
 import { NextFunction, Request, Response } from "express";
 import { AuthService } from "../services/auth.service.js";
 import { asyncHandler } from "../shared/utils/asyncHandler.js";
+import { ApiError } from "../shared/errors/api.error.js";
 
 export class AuthController {
   static register = asyncHandler(async (req: Request, res: Response) => {
     const { fullName, email, password, phoneNumber } = req.body;
 
-     await AuthService.register(fullName, email, password, phoneNumber);
+    await AuthService.register(fullName, email, password, phoneNumber);
 
     res.status(201).json({
       success: true,
@@ -71,27 +72,20 @@ export class AuthController {
     });
   });
 
-  static verifyPhoneOTP =  asyncHandler(async (req: Request, res: Response) => {
-  const { phoneNumber, otp } = req.body;
+  static verifyPhone = asyncHandler(async (req: Request, res: Response) => {
+    const { phoneNumber, idToken } = req.body;
 
-  await AuthService.verifyPhoneOTP(phoneNumber, otp);
-
-  res.json({
-    success: true,
-    message: "Phone number verified successfully",
-  });
-});
-
- static resendOTP = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
-    try {
-      const { phoneNumber } = req.body;
-      const result = await AuthService.resendOTP(phoneNumber);
-      res.json({
-        success: true,
-        message: "OTP resent successfully",
-      });
-    } catch (err) {
-      next(err);
+    if (!phoneNumber || !idToken) {
+      throw new ApiError(400, "Phone number and verification token are required");
     }
+
+    const result = await AuthService.verifyPhone(phoneNumber, idToken);
+
+    res.status(200).json({
+      success: true,
+      message: result.message,
+    });
   });
+
+
 }

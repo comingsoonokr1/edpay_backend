@@ -14,8 +14,6 @@ import {
   refreshTokenSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
-  resendOTPSchema,
-  verifyPhoneOTPSchema,
 } from "../schemas/auth.schema.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 
@@ -179,44 +177,10 @@ router.post(
  */
 router.post(
   "/verify-phone",
-  validate(verifyPhoneOTPSchema),
-  AuthController.verifyPhoneOTP
+  AuthController.verifyPhone
 );
 
-/**
- * @swagger
- * /auth/resend-otp:
- *   post:
- *     summary: Resend email verification OTP
- *     tags: [Auth]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - email
- *             properties:
- *               email:
- *                 type: string
- *                 example: john@example.com
- *     responses:
- *       200:
- *         description: OTP resent successfully
- *       404:
- *         description: User not found
- *       429:
- *         description: Too many OTP resend attempts
- *       500:
- *         description: Failed to send OTP email
- */
-router.post(
-  "/resend-otp",
-  resendOTPLimiter,
-  validate(resendOTPSchema),
-  AuthController.resendOTP
-);
+
 
 
 /**

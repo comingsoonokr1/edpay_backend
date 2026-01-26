@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { AuthController } from "../controllers/auth.controller.js";
 import { validate } from "../middlewares/validate.middleware.js";
-import { loginLimiter, registerLimiter, forgotPasswordLimiter, refreshTokenLimiter, resendOTPLimiter, } from "../middlewares/rate.middleware.js";
-import { registerSchema, loginSchema, refreshTokenSchema, forgotPasswordSchema, resetPasswordSchema, resendOTPSchema, verifyPhoneOTPSchema, } from "../schemas/auth.schema.js";
+import { loginLimiter, registerLimiter, forgotPasswordLimiter, refreshTokenLimiter, } from "../middlewares/rate.middleware.js";
+import { registerSchema, loginSchema, refreshTokenSchema, forgotPasswordSchema, resetPasswordSchema, } from "../schemas/auth.schema.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 const router = Router();
 /**
@@ -130,36 +130,7 @@ router.post("/reset-password", validate(resetPasswordSchema), AuthController.res
  *       401:
  *         description: Invalid or expired OTP
  */
-router.post("/verify-phone", validate(verifyPhoneOTPSchema), AuthController.verifyPhoneOTP);
-/**
- * @swagger
- * /auth/resend-otp:
- *   post:
- *     summary: Resend email verification OTP
- *     tags: [Auth]
- *     requestBody:
- *       required: true
- *       content:
- *         application/json:
- *           schema:
- *             type: object
- *             required:
- *               - email
- *             properties:
- *               email:
- *                 type: string
- *                 example: john@example.com
- *     responses:
- *       200:
- *         description: OTP resent successfully
- *       404:
- *         description: User not found
- *       429:
- *         description: Too many OTP resend attempts
- *       500:
- *         description: Failed to send OTP email
- */
-router.post("/resend-otp", resendOTPLimiter, validate(resendOTPSchema), AuthController.resendOTP);
+router.post("/verify-phone", AuthController.verifyPhone);
 /**
  * @swagger
  * /auth/logout:
