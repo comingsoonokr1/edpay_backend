@@ -26,7 +26,7 @@ const UserSchema = new Schema(
         password: {
             type: String,
             required: true,
-            select: false,
+           
         },
 
         role: {
@@ -84,7 +84,6 @@ const UserSchema = new Schema(
 
         transactionPin: {
             type: String,
-            select: false,
         },
 
         isKycVerified: {
