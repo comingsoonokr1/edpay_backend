@@ -13,7 +13,7 @@ export class BillController {
   // Pay bill
   static payBill = asyncHandler(async (req: Request, res: Response) => {
     const userId = req.user!.userId;
-    const { provider, customerId, amount, variationCode, billType } = req.body;
+    const { provider, customerId, amount, variationCode, billType, transactionPin } = req.body;
 
     const transaction = await BillService.payBill({
       userId,
@@ -22,6 +22,7 @@ export class BillController {
       amount,
       variationCode,
       billType,
+      transactionPin,
     });
 
     res.status(200).json({

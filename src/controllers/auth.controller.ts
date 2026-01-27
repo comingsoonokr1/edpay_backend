@@ -1,6 +1,7 @@
 import { NextFunction, Request, Response } from "express";
 import { AuthService } from "../services/auth.service.js";
 import { asyncHandler } from "../shared/utils/asyncHandler.js";
+import { ApiError } from "../shared/errors/api.error.js";
 
 
 export class AuthController {
@@ -72,18 +73,18 @@ export class AuthController {
     });
   });
 
-  static verifyPhoneOTP =  asyncHandler(async (req: Request, res: Response) => {
-  const { phoneNumber, otp } = req.body;
+  static verifyPhoneOTP = asyncHandler(async (req: Request, res: Response) => {
+    const { phoneNumber, otp } = req.body;
 
-  await AuthService.verifyPhoneOTP(phoneNumber, otp);
+    await AuthService.verifyPhoneOTP(phoneNumber, otp);
 
-  res.json({
-    success: true,
-    message: "Phone number verified successfully",
+    res.json({
+      success: true,
+      message: "Phone number verified successfully",
+    });
   });
-});
 
- static resendOTP = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
+  static resendOTP = asyncHandler(async (req: Request, res: Response, next: NextFunction) => {
     try {
       const { phoneNumber } = req.body;
       const result = await AuthService.resendOTP(phoneNumber);
@@ -95,5 +96,20 @@ export class AuthController {
       next(err);
     }
   });
+
+ static async submitBVN(req: Request, res: Response) {
+  const { bvn, identityId, transactionPin } = req.body;
+  const userId = req.user!.userId;
+
+  const result = await AuthService.submitBVNAndCreateWallet(
+    userId,
+    bvn,
+    identityId,
+    transactionPin
+  );
+
+  return res.status(200).json(result);
+}
+
 
 }

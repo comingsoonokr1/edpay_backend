@@ -44,3 +44,14 @@ export const resendOTPSchema = z.object({
         phoneNumber: z.string().min(1, "Phone number is required"),
     }),
 });
+export const submitBVNSchema = z.object({
+    body: z.object({
+        bvn: z
+            .string()
+            .regex(/^\d{11}$/, "BVN must be 11 digits"),
+        identityId: z.string().min(3, "Identity ID is required"),
+        transactionPin: z
+            .string()
+            .regex(/^\d{4}$/, "Transaction PIN must be 4 digits"),
+    }),
+});

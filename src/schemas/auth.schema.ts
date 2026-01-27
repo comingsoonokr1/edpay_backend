@@ -53,3 +53,15 @@ export const resendOTPSchema = z.object({
   }),
 });
 
+export const submitBVNSchema = z.object({
+  body: z.object({
+    bvn: z
+      .string()
+      .regex(/^\d{11}$/, "BVN must be 11 digits"),
+    identityId: z.string().min(3, "Identity ID is required"),
+    transactionPin: z
+      .string()
+      .regex(/^\d{4}$/, "Transaction PIN must be 4 digits"),
+  }),
+});
+

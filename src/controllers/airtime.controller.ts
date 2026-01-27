@@ -15,7 +15,7 @@ export class AirtimeController {
 
   static purchase = asyncHandler(async (req: Request, res: Response) => {
     const userId = req.user!.userId;
-    const { provider, phone, amount, debitAccountNumber, statusUrl } = req.body;
+    const { provider, phone, amount, debitAccountNumber, statusUrl, transactionPin } = req.body;
 
     if (!debitAccountNumber) {
       throw new ApiError(400, "debitAccountNumber is required");
@@ -27,6 +27,7 @@ export class AirtimeController {
       phone,
       amount,
       debitAccountNumber,
+      transactionPin,
       statusUrl, // optional
     });
 

@@ -16,6 +16,7 @@ import {
   resetPasswordSchema,
   resendOTPSchema,
   verifyPhoneOTPSchema,
+  submitBVNSchema,
 } from "../schemas/auth.schema.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 
@@ -184,6 +185,7 @@ router.post(
 );
 
 
+
 router.post(
   "/resend-otp",
   resendOTPLimiter,
@@ -210,6 +212,45 @@ router.post(
   "/logout",
   authMiddleware,
   AuthController.logout
+);
+
+
+/**
+ * @swagger
+ * /auth/submit-bvn:
+ *   post:
+ *     summary: Submit BVN, set transaction PIN and create SafeHaven wallet
+ *     tags: [Auth]
+ *     security:
+ *       - bearerAuth: []
+ *     requestBody:
+ *       required: true
+ *       content:
+ *         application/json:
+ *           schema:
+ *             type: object
+ *             required: [bvn, identityId, transactionPin]
+ *             properties:
+ *               bvn:
+ *                 type: string
+ *                 example: "22123456789"
+ *               identityId:
+ *                 type: string
+ *                 example: "sh_identity_ref_123"
+ *               transactionPin:
+ *                 type: string
+ *                 example: "1234"
+ *     responses:
+ *       200:
+ *         description: SafeHaven wallet created successfully
+ *       401:
+ *         description: Unauthorized
+ */
+router.post(
+  "/submit-bvn",
+  authMiddleware,
+  validate(submitBVNSchema),
+  AuthController.submitBVN
 );
 
 export default router;

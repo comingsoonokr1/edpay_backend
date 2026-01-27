@@ -2,6 +2,12 @@ var _a;
 import { AuthService } from "../services/auth.service.js";
 import { asyncHandler } from "../shared/utils/asyncHandler.js";
 export class AuthController {
+    static async submitBVN(req, res) {
+        const { bvn, identityId, transactionPin } = req.body;
+        const userId = req.user.userId;
+        const result = await AuthService.submitBVNAndCreateWallet(userId, bvn, identityId, transactionPin);
+        return res.status(200).json(result);
+    }
 }
 _a = AuthController;
 AuthController.register = asyncHandler(async (req, res) => {

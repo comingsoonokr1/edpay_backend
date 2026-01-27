@@ -82,6 +82,11 @@ const UserSchema = new Schema(
             type: Date,
         },
 
+        transactionPin: {
+            type: String,
+            select: false,
+        },
+
         isKycVerified: {
             type: Boolean,
             default: false,

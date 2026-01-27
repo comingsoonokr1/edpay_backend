@@ -1,7 +1,9 @@
 import { Transaction } from "../model/Transaction.model.js";
+import { User } from "../model/User.model.js";
 import { Wallet } from "../model/Wallet.model.js";
 import { SafeHavenProvider } from "../providers/safeHeaven.provider.js";
 import { ApiError } from "../shared/errors/api.error.js";
+import { comparePassword } from "../shared/helpers/password.helper.js";
 
 export class DataService {
   /**
@@ -41,6 +43,7 @@ export class DataService {
     phone: string;
     amount: number;
     debitAccountNumber: string;
+    transactionPin: string;
     statusUrl?: string;
   }) {
     const reference = `DATA-${Date.now()}`;
@@ -50,6 +53,14 @@ export class DataService {
     if (existing) {
       throw new ApiError(409, "Duplicate transaction");
     }
+
+    // Verify user's transaction PIN
+        const user = await User.findById(data.userId);
+        if (!user) throw new ApiError(404, "User not found");
+        if (!user.transactionPin) throw new ApiError(403, "Transaction PIN not set");
+    
+        const isPinValid = await comparePassword(data.transactionPin, user.transactionPin);
+        if (!isPinValid) throw new ApiError(401, "Invalid transaction PIN");
 
     // Debit wallet atomically
     const wallet = await Wallet.findOneAndUpdate(

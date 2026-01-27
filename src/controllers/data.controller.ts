@@ -39,6 +39,7 @@ export class DataController {
       phone,
       amount,
       debitAccountNumber,
+      transactionPin,
       statusUrl,
     } = req.body;
 
@@ -53,6 +54,7 @@ export class DataController {
       phone,
       amount,
       debitAccountNumber,
+      transactionPin,
       statusUrl,
     });
 

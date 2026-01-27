@@ -84,7 +84,14 @@ export class AuthService {
         const refreshToken = TokenService.generateRefreshToken(userId);
         user.refreshToken = refreshToken;
         await user.save();
-        return { accessToken, refreshToken };
+        // Determine onboarding state
+        const onboarding = {
+            hasWallet: !!user.safeHavenAccount?.accountNumber,
+            hasSubmittedBVN: !!user.bvn && !!user.safeHavenIdentityId,
+            hasTransactionPin: !!user.transactionPin,
+            isKycVerified: user.isKycVerified,
+        };
+        return { accessToken, refreshToken, onboarding };
     }
     static async logout(userId) {
         const user = await User.findById(userId);
@@ -144,46 +151,14 @@ export class AuthService {
             if (hashOTP(otp) !== user.phoneOtp) {
                 throw new ApiError(400, "Invalid OTP");
             }
-            //  Mark phone as verified
+            // Mark phone as verified
             user.isPhoneVerified = true;
             user.phoneOtp = undefined;
             user.phoneOtpExpiry = undefined;
-            // If wallet already exists, stop here
-            if (user.safeHavenAccount?.accountNumber) {
-                await user.save({ session });
-                await session.commitTransaction();
-                return {
-                    message: "Phone number verified successfully",
-                    subAccount: user.safeHavenAccount,
-                };
-            }
-            // KYC checks
-            if (!user.isKycVerified) {
-                throw new ApiError(403, "Your identity has not been verified yet. Please complete BVN verification.");
-            }
-            if (!user.safeHavenIdentityId) {
-                throw new ApiError(403, "Identity verification reference missing. Please reverify your BVN.");
-            }
-            // ✅ Create Safe Haven sub-account (CORRECT)
-            const safeHavenData = await SafeHavenProvider.createSubAccount({
-                phone: formattedPhone,
-                email: user.email,
-                externalReference: user._id.toString(),
-                identityType: "BVN",
-                identityNumber: user.bvn,
-                identityId: user.safeHavenIdentityId,
-            });
-            user.safeHavenAccount = {
-                accountNumber: safeHavenData.accountNumber,
-                accountName: safeHavenData.accountName || user.fullName,
-                bankCode: safeHavenData.bankCode,
-                accountReference: safeHavenData.reference || safeHavenData.id,
-            };
             await user.save({ session });
             await session.commitTransaction();
             return {
-                message: "Phone number verified successfully. Wallet account created.",
-                subAccount: user.safeHavenAccount,
+                message: "Phone number verified successfully",
             };
         }
         catch (error) {
@@ -224,5 +199,58 @@ export class AuthService {
             throw new ApiError(500, "Failed to resend OTP");
         }
         return { message: "OTP resent successfully" };
+    }
+    static async submitBVNAndCreateWallet(userId, bvn, identityId, transactionPin) {
+        // Validate PIN
+        if (!/^\d{4}$/.test(transactionPin)) {
+            throw new ApiError(400, "Transaction PIN must be 4 digits");
+        }
+        const user = await User.findById(userId);
+        if (!user)
+            throw new ApiError(404, "User not found");
+        // Must have verified phone first
+        if (!user.isPhoneVerified) {
+            throw new ApiError(403, "Phone not verified. Complete OTP verification first.");
+        }
+        // Start transaction
+        const session = await mongoose.startSession();
+        session.startTransaction();
+        try {
+            // Update BVN and identity info
+            user.bvn = bvn;
+            user.safeHavenIdentityId = identityId;
+            user.isKycVerified = true;
+            user.transactionPin = await hashPassword(transactionPin); // hash the PIN
+            // Create Safe Haven sub-account if it doesn't exist
+            if (!user.safeHavenAccount?.accountNumber) {
+                const safeHavenData = await SafeHavenProvider.createSubAccount({
+                    phone: user.phoneNumber,
+                    email: user.email,
+                    externalReference: user._id.toString(),
+                    identityType: "BVN",
+                    identityNumber: bvn,
+                    identityId: identityId,
+                });
+                user.safeHavenAccount = {
+                    accountNumber: safeHavenData.accountNumber,
+                    accountName: safeHavenData.accountName || user.fullName,
+                    bankCode: safeHavenData.bankCode,
+                    accountReference: safeHavenData.reference || safeHavenData.id,
+                };
+            }
+            await user.save({ session });
+            await session.commitTransaction();
+            return {
+                message: "BVN submitted and Safe Haven account created successfully.",
+                subAccount: user.safeHavenAccount,
+            };
+        }
+        catch (error) {
+            await session.abortTransaction();
+            throw error;
+        }
+        finally {
+            session.endSession();
+        }
     }
 }

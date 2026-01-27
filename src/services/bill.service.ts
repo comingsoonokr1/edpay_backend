@@ -3,6 +3,7 @@ import { Transaction } from "../model/Transaction.model.js";
 import { SafeHavenProvider } from "../providers/safeHeaven.provider.js";
 import { ApiError } from "../shared/errors/api.error.js";
 import { User } from "../model/User.model.js";
+import { comparePassword } from "../shared/helpers/password.helper.js";
 
 export class BillService {
   // Get providers (TV, Electricity, Education)
@@ -31,13 +32,23 @@ export class BillService {
     amount: number;
     variationCode?: string;    // For TV bundles
     billType?: "prepaid" | "postpaid"; // For electricity
+    transactionPin: string;
     statusUrl?: string;
   }) {
+    // Verify user's transaction PIN
+    const user = await User.findById(data.userId);
+    if (!user) throw new ApiError(404, "User not found");
+    if (!user.transactionPin) throw new ApiError(403, "Transaction PIN not set");
+
+    const isPinValid = await comparePassword(data.transactionPin, user.transactionPin);
+    if (!isPinValid) throw new ApiError(401, "Invalid transaction PIN");
+
     // 1️ Check wallet balance
     const wallet = await Wallet.findOne({ userId: data.userId });
     if (!wallet || wallet.balance < data.amount) {
       throw new ApiError(400, "Insufficient wallet balance");
     }
+
 
     // 2️ Create pending transaction
     const reference = `BILL-${Date.now()}`;
@@ -50,7 +61,7 @@ export class BillService {
       meta: { provider: data.provider, customerId: data.customerId },
     });
 
-    const user = await User.findById(data.userId);
+
     if (!user || !user.safeHavenAccount?.accountNumber) {
       throw new ApiError(404, "User bank account not found");
     }

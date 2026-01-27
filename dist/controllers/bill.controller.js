@@ -13,7 +13,7 @@ BillController.getProviders = asyncHandler(async (req, res) => {
 // Pay bill
 BillController.payBill = asyncHandler(async (req, res) => {
     const userId = req.user.userId;
-    const { provider, customerId, amount, variationCode, billType } = req.body;
+    const { provider, customerId, amount, variationCode, billType, transactionPin } = req.body;
     const transaction = await BillService.payBill({
         userId,
         provider,
@@ -21,6 +21,7 @@ BillController.payBill = asyncHandler(async (req, res) => {
         amount,
         variationCode,
         billType,
+        transactionPin,
     });
     res.status(200).json({
         success: true,
