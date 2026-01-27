@@ -10,10 +10,20 @@ import { sendOTPSMS } from "../shared/helpers/otp.helper.js";
 export class AuthService {
     // Inside AuthService.ts
     static validateAndFormatPhone(phoneNumber) {
-        const cleanPhone = phoneNumber.replace(/\s+/g, "").replace("+", "");
-        const nigerianFormatRegex = /^[1-9]\d{10,14}$/; // No '+' at the start
+        // Remove spaces and plus sign
+        let cleanPhone = phoneNumber.replace(/\s+/g, "").replace(/^\+/, "");
+        // If starts with 0, replace with 234
+        if (cleanPhone.startsWith("0")) {
+            cleanPhone = "234" + cleanPhone.slice(1);
+        }
+        // If does not start with 234 now, optionally prepend it
+        else if (!cleanPhone.startsWith("234")) {
+            cleanPhone = "234" + cleanPhone;
+        }
+        // Regex for Nigerian phone numbers in international format (234 + 10 digits)
+        const nigerianFormatRegex = /^234[789]\d{9}$/;
         if (!nigerianFormatRegex.test(cleanPhone)) {
-            throw new ApiError(400, "Invalid phone format. Use international format without '+' (e.g., 2348012345678)");
+            throw new ApiError(400, "Invalid phone format. Use Nigerian international format without '+' (e.g., 2348012345678)");
         }
         return cleanPhone;
     }
