@@ -1,43 +1,49 @@
 import mongoose, { model, Schema } from "mongoose";
 
 const TransactionSchema = new Schema({
-    userId: { 
-        type: mongoose.Types.ObjectId, 
-        ref: "User", required: true 
+    userId: {
+        type: mongoose.Types.ObjectId,
+        ref: "User", required: true
     },
-    type: { 
-        type: String, 
-        enum: ["credit", "debit"], 
-        required: true 
-    },
-    amount: { 
-        type: Number, 
-        required: true 
-    },
-    reference: { 
-        type: String, 
+    wallet: {
+        type: mongoose.Types.ObjectId,
+        ref: "Wallet",
         required: true,
-         unique: true
-         },
-    status: { 
-        type: String, 
-        enum: ["pending", "success", "failed"], 
-        default: "pending" 
+    },
+
+    type: {
+        type: String,
+        enum: ["credit", "debit"],
+        required: true
+    },
+    amount: {
+        type: Number,
+        required: true
+    },
+    reference: {
+        type: String,
+        required: true,
+        unique: true
+    },
+    status: {
+        type: String,
+        enum: ["pending", "success", "failed"],
+        default: "pending"
     },
     source: {
-         type: String, 
-         enum: ["wallet", "bank", "card", "airtime", "bills"], 
-         required: true 
-        },
+        type: String,
+        enum: ["wallet", "bank", "card", "airtime", "bills", "checkout"],
+        required: true
+    },
     details: { type: mongoose.Schema.Types.Mixed },
 
-     channel: {
-      type: String,
-      enum: ["card", "bank", "wallet"],
+    channel: {
+        type: String,
+        enum: ["card", "bank", "wallet"],
     },
 
     meta: {
-      type: Schema.Types.Mixed,
+        type: Schema.Types.Mixed,
     }, // Extra info like transaction metadata
 }, { timestamps: true });
 

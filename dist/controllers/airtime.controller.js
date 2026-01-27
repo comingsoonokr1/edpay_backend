@@ -1,6 +1,7 @@
 var _a;
 import { AirtimeService } from "../services/airtime.service.js";
 import { asyncHandler } from "../shared/utils/asyncHandler.js";
+import { ApiError } from "../shared/errors/api.error.js";
 export class AirtimeController {
 }
 _a = AirtimeController;
@@ -13,12 +14,17 @@ AirtimeController.getProviders = asyncHandler(async (_req, res) => {
 });
 AirtimeController.purchase = asyncHandler(async (req, res) => {
     const userId = req.user.userId;
-    const { provider, phone, amount } = req.body;
+    const { provider, phone, amount, debitAccountNumber, statusUrl } = req.body;
+    if (!debitAccountNumber) {
+        throw new ApiError(400, "debitAccountNumber is required");
+    }
     const transaction = await AirtimeService.purchaseAirtime({
         userId,
         provider,
         phone,
         amount,
+        debitAccountNumber,
+        statusUrl, // optional
     });
     res.status(201).json({
         success: true,

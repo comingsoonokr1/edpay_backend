@@ -1,6 +1,6 @@
 import { Transaction } from "../model/Transaction.model.js";
 import { Wallet } from "../model/Wallet.model.js";
-import { VTPassProvider } from "../providers/vtpass.provider.js";
+import { SafeHavenProvider } from "../providers/safeHeaven.provider.js";
 import { ApiError } from "../shared/errors/api.error.js";
 
 export class AirtimeService {
@@ -13,76 +13,77 @@ export class AirtimeService {
     ];
   }
 
-  static async purchaseAirtime(data: {
-    userId: string;
-    provider: string;
-    phone: string;
-    amount: number;
-  }) {
-    if (data.amount <= 0) {
-      throw new ApiError(400, "Invalid airtime amount");
-    }
+ static async purchaseAirtime(data: {
+  userId: string;
+  provider: string; // e.g., "MTN"
+  phone: string;
+  amount: number;
+  debitAccountNumber: string; // must supply
+  statusUrl?: string;         // optional
+}) {
+  if (data.amount <= 0) throw new ApiError(400, "Invalid airtime amount");
 
-    const reference = `AIR-${Date.now()}`;
+  const reference = `SH-${Date.now()}`;
 
-    // Prevent duplicate transaction
-    const existing = await Transaction.findOne({ reference });
-    if (existing) {
-      throw new ApiError(409, "Duplicate transaction");
-    }
+  // Prevent duplicate transaction
+  const existing = await Transaction.findOne({ reference });
+  if (existing) throw new ApiError(409, "Duplicate transaction");
 
-    // Atomic wallet debit
-    const wallet = await Wallet.findOneAndUpdate(
-      { userId: data.userId, balance: { $gte: data.amount } },
-      { $inc: { balance: -data.amount } },
-      { new: true }
-    );
+  // Debit wallet atomically
+  const wallet = await Wallet.findOneAndUpdate(
+    { userId: data.userId, balance: { $gte: data.amount } },
+    { $inc: { balance: -data.amount } },
+    { new: true }
+  );
 
-    if (!wallet) {
-      throw new ApiError(400, "Insufficient wallet balance");
-    }
+  if (!wallet) throw new ApiError(400, "Insufficient wallet balance");
 
-    // Create pending transaction
-    const transaction = await Transaction.create({
-      userId: data.userId,
-      type: "debit",
-      source: "airtime",
+  // Create pending transaction
+  const transaction = await Transaction.create({
+    userId: data.userId,
+    type: "debit",
+    source: "airtime",
+    amount: data.amount,
+    reference,
+    status: "pending",
+  });
+
+  try {
+    // 1️⃣ Fetch provider category dynamically
+    const providers = await SafeHavenProvider.getAirtimeProviders();
+    const provider = providers.find(p => p.code === data.provider.toUpperCase());
+    if (!provider) throw new ApiError(404, "Provider not found");
+
+    // 2️⃣ SafeHaven purchase
+    const response = await SafeHavenProvider.purchaseAirtime({
+      phone: data.phone,
       amount: data.amount,
+      serviceCategoryId: provider.id,
+      debitAccountNumber: data.debitAccountNumber,
+      statusUrl: data.statusUrl,
       reference,
-      status: "pending",
     });
 
-    try {
-      const response = await VTPassProvider.purchaseAirtime({
-        serviceID: data.provider,
-        phone: data.phone,
-        amount: data.amount,
-        request_id: reference,
-      });
+    transaction.status = "success";
+    transaction.meta = response;
+    await transaction.save();
 
-      if (response.code !== "000") {
-        throw new Error("VTpass failed");
-      }
+    return transaction;
+  } catch (err) {
+    // Refund wallet on failure
+    await Wallet.findOneAndUpdate(
+      { userId: data.userId },
+      { $inc: { balance: data.amount } }
+    );
 
-      transaction.status = "success";
-      transaction.meta = response;
-      await transaction.save();
+    transaction.status = "failed";
+    transaction.meta = { error: err };
+    await transaction.save();
 
-      return transaction;
-    } catch (error) {
-      // Refund wallet on failure
-      await Wallet.findOneAndUpdate(
-        { userId: data.userId },
-        { $inc: { balance: data.amount } }
-      );
-
-      transaction.status = "failed";
-      transaction.meta = { error: "VTpass failed" };
-      await transaction.save();
-
-      throw new ApiError(400, "Airtime purchase failed");
-    }
+    throw new ApiError(400, "Airtime purchase failed");
   }
+}
+
 
   static async getStatus(reference: string) {
     const transaction = await Transaction.findOne({ reference });

@@ -1,6 +1,7 @@
 import { Request, Response } from "express";
 import { AirtimeService } from "../services/airtime.service.js";
 import { asyncHandler } from "../shared/utils/asyncHandler.js";
+import { ApiError } from "../shared/errors/api.error.js";
 
 export class AirtimeController {
   static getProviders = asyncHandler(async (_req: Request, res: Response) => {
@@ -14,13 +15,19 @@ export class AirtimeController {
 
   static purchase = asyncHandler(async (req: Request, res: Response) => {
     const userId = req.user!.userId;
-    const { provider, phone, amount } = req.body;
+    const { provider, phone, amount, debitAccountNumber, statusUrl } = req.body;
+
+    if (!debitAccountNumber) {
+      throw new ApiError(400, "debitAccountNumber is required");
+    }
 
     const transaction = await AirtimeService.purchaseAirtime({
       userId,
       provider,
       phone,
       amount,
+      debitAccountNumber,
+      statusUrl, // optional
     });
 
     res.status(201).json({
@@ -28,7 +35,8 @@ export class AirtimeController {
       message: "Airtime purchase successful",
       data: transaction,
     });
-  })
+  });
+
 
   static getStatus = asyncHandler(async (req: Request, res: Response) => {
     const reference = req.params.reference as string;

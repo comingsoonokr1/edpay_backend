@@ -125,7 +125,7 @@ router.post(
 router.get(
   "/status/:reference",
   validate(billStatusSchema),
-  BillController.getstatus
+  BillController.getBillStatus
 );
 
 export default router;

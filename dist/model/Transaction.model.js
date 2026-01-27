@@ -4,6 +4,11 @@ const TransactionSchema = new Schema({
         type: mongoose.Types.ObjectId,
         ref: "User", required: true
     },
+    wallet: {
+        type: mongoose.Types.ObjectId,
+        ref: "Wallet",
+        required: true,
+    },
     type: {
         type: String,
         enum: ["credit", "debit"],
@@ -25,7 +30,7 @@ const TransactionSchema = new Schema({
     },
     source: {
         type: String,
-        enum: ["wallet", "bank", "card", "airtime", "bills"],
+        enum: ["wallet", "bank", "card", "airtime", "bills", "checkout"],
         required: true
     },
     details: { type: mongoose.Schema.Types.Mixed },

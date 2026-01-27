@@ -20,14 +20,11 @@ WalletController.getTransactions = asyncHandler(async (req, res) => {
         data: transactions,
     });
 });
-WalletController.fundWallet = asyncHandler(async (req, res) => {
-    const userId = req.user.userId;
-    const { amount } = req.body;
-    const balance = await WalletService.createStripePaymentIntent(userId, amount);
+WalletController.getBanks = asyncHandler(async (_req, res) => {
+    const banks = await WalletService.getBanks();
     res.status(200).json({
         success: true,
-        message: "Wallet funded successfully",
-        data: { balance },
+        data: banks,
     });
 });
 WalletController.withdraw = asyncHandler(async (req, res) => {
@@ -43,14 +40,12 @@ WalletController.withdraw = asyncHandler(async (req, res) => {
 WalletController.transfer = asyncHandler(async (req, res) => {
     const senderId = req.user.userId;
     const { method, recipient, amount, bank, accountNumber } = req.body;
-    // Validate required fields
     if (!method || !recipient || !amount) {
         return res.status(400).json({
             success: false,
             message: "Method, recipient, and amount are required",
         });
     }
-    // Call WalletService.transfer
     const result = await WalletService.transfer({
         senderId,
         method,
@@ -62,6 +57,24 @@ WalletController.transfer = asyncHandler(async (req, res) => {
     res.status(200).json({
         success: true,
         message: result.message,
-        data: { balance: result.balance, transferCode: result.transferCode },
+        data: {
+            balance: result.balance,
+            transferReference: result.transferReference,
+        },
+    });
+});
+// New endpoint: Check bank transfer status
+WalletController.checkTransferStatus = asyncHandler(async (req, res) => {
+    const { transferReference } = req.params;
+    if (!transferReference) {
+        return res.status(400).json({
+            success: false,
+            message: "Transfer reference is required",
+        });
+    }
+    const result = await WalletService.checkPendingTransfer(transferReference);
+    res.status(200).json({
+        success: true,
+        data: result,
     });
 });

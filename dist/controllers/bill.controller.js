@@ -1,38 +1,36 @@
 var _a;
-import { BillService } from "../services/bill.service.js";
 import { asyncHandler } from "../shared/utils/asyncHandler.js";
-import { ApiError } from "../shared/errors/api.error.js";
+import { BillService } from "../services/bill.service.js";
 export class BillController {
 }
 _a = BillController;
+// Get providers
 BillController.getProviders = asyncHandler(async (req, res) => {
     const { category } = req.query;
-    if (!category) {
-        throw new ApiError(400, "Category is required");
-    }
     const providers = await BillService.getProviders(category);
-    res.status(200).json({
-        success: true,
-        data: providers,
-    });
+    res.status(200).json({ success: true, data: providers });
 });
+// Pay bill
 BillController.payBill = asyncHandler(async (req, res) => {
     const userId = req.user.userId;
-    const { provider, customerId, amount } = req.body;
+    const { provider, customerId, amount, variationCode, billType } = req.body;
     const transaction = await BillService.payBill({
         userId,
         provider,
         customerId,
         amount,
+        variationCode,
+        billType,
     });
-    res.status(201).json({
+    res.status(200).json({
         success: true,
-        message: "Bill payment successful",
+        message: "Bill paid successfully",
         data: transaction,
     });
 });
-BillController.getstatus = asyncHandler(async (req, res) => {
-    const reference = req.params.reference;
+// Get bill status
+BillController.getBillStatus = asyncHandler(async (req, res) => {
+    const { reference } = req.params;
     const transaction = await BillService.getStatus(reference);
     res.status(200).json({
         success: true,

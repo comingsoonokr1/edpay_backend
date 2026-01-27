@@ -1,88 +1,88 @@
-import { Transaction } from "../model/Transaction.model.js";
 import { Wallet } from "../model/Wallet.model.js";
-import { VTPassProvider } from "../providers/vtpass.provider.js";
+import { Transaction } from "../model/Transaction.model.js";
+import { SafeHavenProvider } from "../providers/safeHeaven.provider.js";
 import { ApiError } from "../shared/errors/api.error.js";
+import { User } from "../model/User.model.js";
 export class BillService {
-    // Get providers by category (tv or electricity)
+    // Get providers (TV, Electricity, Education)
     static async getProviders(category) {
-        const response = await VTPassProvider.getCategoryBillers(category);
-        console.log(response);
-        if (response.response_description !== "000") {
+        // getVASProviders already returns array of providers
+        const providers = await SafeHavenProvider.getVASProviders(category);
+        if (!providers || providers.length === 0) {
             throw new ApiError(400, "Unable to fetch providers");
         }
-        return response.content.map((item) => ({
-            serviceID: item.serviceID, // e.g., dstv, ikeja-electric
+        // Map to your desired format
+        return providers.map((item) => ({
+            serviceID: item.id, // note: id instead of serviceCategoryId
             name: item.name,
-            type: item.type || null, // e.g., prepaid, postpaid
+            type: item.type || null,
         }));
     }
-    // Pay bill (TV or Electricity) with optional variationCode and billType
+    // Pay a bill
     static async payBill(data) {
+        // 1️ Check wallet balance
         const wallet = await Wallet.findOne({ userId: data.userId });
         if (!wallet || wallet.balance < data.amount) {
             throw new ApiError(400, "Insufficient wallet balance");
         }
+        // 2️ Create pending transaction
         const reference = `BILL-${Date.now()}`;
-        // Check if transaction with this reference already exists
-        const existing = await Transaction.findOne({ reference });
-        if (existing)
-            return existing;
-        // Create pending transaction first
         const transaction = await Transaction.create({
             userId: data.userId,
             type: "bill",
             amount: data.amount,
             reference,
             status: "pending",
-            meta: {
-                provider: data.provider,
-                customerId: data.customerId,
-                variationCode: data.variationCode || null,
-                billType: data.billType || null,
-            },
+            meta: { provider: data.provider, customerId: data.customerId },
         });
+        const user = await User.findById(data.userId);
+        if (!user || !user.safeHavenAccount?.accountNumber) {
+            throw new ApiError(404, "User bank account not found");
+        }
         try {
-            // Build VTpass request payload dynamically
+            // 3️ Prepare payload for SafeHavenProvider
             const payload = {
-                serviceID: data.provider,
-                billersCode: data.customerId,
+                serviceCategoryId: data.provider,
                 amount: data.amount,
-                request_id: reference,
+                debitAccountNumber: user.safeHavenAccount.accountNumber, // linked account
+                customerId: data.customerId,
+                statusUrl: data.statusUrl,
             };
-            if (data.variationCode) {
-                payload.variation_code = data.variationCode;
-            }
-            if (data.billType) {
-                payload.type = data.billType;
-            }
-            // Call VTpass payBill
-            const response = await VTPassProvider.payBill(payload);
-            if (response.code !== "000") {
+            if (data.variationCode)
+                payload.bundleCode = data.variationCode; // TV
+            if (data.billType)
+                payload.vendType = data.billType; // Utility
+            // 4️⃣ Call SafeHaven API
+            const response = await SafeHavenProvider.payBill(payload);
+            // 5️⃣ Check for success
+            // SafeHaven responses for VAS are usually { status: "success", ... }
+            if (!response || response.status !== "success") {
                 transaction.status = "failed";
                 transaction.meta.response = response;
                 await transaction.save();
                 throw new ApiError(400, "Bill payment failed");
             }
-            // Debit wallet only after successful payment
+            // 6️⃣ Debit wallet
             wallet.balance -= data.amount;
             await wallet.save();
+            // 7️⃣ Update transaction
             transaction.status = "success";
             transaction.meta.response = response;
             await transaction.save();
             return transaction;
         }
-        catch (error) {
+        catch (err) {
             transaction.status = "failed";
-            transaction.meta.error = error?.message || "Payment error";
+            transaction.meta.error = err?.message || "Payment error";
             await transaction.save();
-            throw error;
+            throw err;
         }
     }
+    // Check bill transaction status
     static async getStatus(reference) {
         const transaction = await Transaction.findOne({ reference });
-        if (!transaction) {
-            throw new ApiError(404, "Bill payment not found");
-        }
+        if (!transaction)
+            throw new ApiError(404, "Transaction not found");
         return transaction;
     }
 }

@@ -1,69 +1,114 @@
-import mongoose from "mongoose";
+import mongoose, { Schema, Model, InferSchemaType } from "mongoose";
 
+const UserSchema = new Schema(
+    {
+        fullName: {
+            type: String,
+            required: true,
+            trim: true,
+        },
 
-export interface UserDocument extends mongoose.Document {
-    fullName: string;
-    email: string;
-    phoneNumber: string;
-    password: string;
-    role: "user" | "admin";
+        email: {
+            type: String,
+            required: true,
+            lowercase: true,
+            unique: true,
+            index: true,
+        },
 
-    phoneOtp?: string;
-    phoneOtpExpiry?: Date;
-    isPhoneVerified: boolean;
+        phoneNumber: {
+            type: String,
+            required: true,
+            unique: true,
+            index: true,
+        },
 
-    refreshToken?: string | null;
-    forgotPasswordToken?: string | null;
-    forgotPasswordExpiry?: Date | null;
+        password: {
+            type: String,
+            required: true,
+            select: false,
+        },
 
-    otpResendTimestamp: Date | null;
-    otpResendLimit: number;
-}
+        role: {
+            type: String,
+            enum: ["user", "admin"],
+            default: "user",
+        },
 
+        phoneOtp: { type: String, select: false },
+        phoneOtpExpiry: { type: Date },
 
+        isPhoneVerified: {
+            type: Boolean,
+            default: false,
+        },
 
+        refreshToken: {
+            type: String,
+            default: null,
+            select: false,
+        },
 
-const UserSchema = new mongoose.Schema({
-    fullName: { type: String, required: true },
+        forgotPasswordToken: {
+            type: String,
+            default: null,
+            select: false,
+        },
 
-    email: {
-        type: String,
-        required: true,
-        unique: true,
-        lowercase: true,
+        forgotPasswordExpiry: {
+            type: Date,
+            default: null,
+        },
+
+        otpResendTimestamp: {
+            type: Date,
+            default: null,
+        },
+
+        otpResendLimit: {
+            type: Number,
+            default: 0,
+        },
+
+        bvn: {
+            type: String,
+            trim: true,
+            minlength: 11,
+            maxlength: 11,
+            sparse: true,
+        },
+
+        dateOfBirth: {
+            type: Date,
+        },
+
+        isKycVerified: {
+            type: Boolean,
+            default: false,
+        },
+
+        safeHavenIdentityId: { type: String },
+
+        safeHavenAccount: {
+            accountNumber: { type: String },
+            accountName: { type: String },
+            bankCode: { type: String },
+            accountReference: { type: String },
+            createdAt: { type: Date },
+        },
     },
+    { timestamps: true }
+);
 
-    phoneNumber: {
-        type: String,
-        required: true,
-        unique: true,
-    },
+/**
+ * Strongly typed User document
+ */
+export type UserDocument = InferSchemaType<typeof UserSchema> & {
+    _id: mongoose.Types.ObjectId;
+};
 
-    password: { type: String, required: true },
-
-    role: {
-        type: String,
-        enum: ["user", "admin"],
-        default: "user",
-    },
-
-    phoneOtp: { type: String },
-    phoneOtpExpiry: { type: Date },
-
-    isPhoneVerified: {
-        type: Boolean,
-        default: false,
-    },
-
-    refreshToken: { type: String, default: null },
-
-    forgotPasswordToken: { type: String, default: null },
-    forgotPasswordExpiry: { type: Date, default: null },
-
-    otpResendTimestamp: { type: Date, default: null },
-    otpResendLimit: { type: Number, default: 0 },
-
-}, { timestamps: true });
-
-
-export const User = mongoose.model<UserDocument>("User", UserSchema);
+/**
+ *  Typed model
+ */
+export const User: Model<UserDocument> =
+    mongoose.models.User || mongoose.model<UserDocument>("User", UserSchema);

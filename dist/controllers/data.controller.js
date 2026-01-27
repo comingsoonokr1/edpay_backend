@@ -5,6 +5,7 @@ import { DataService } from "../services/data.service.js";
 export class DataController {
 }
 _a = DataController;
+// GET /data/providers
 DataController.getProviders = asyncHandler(async (req, res) => {
     const providers = await DataService.getProviders();
     res.json({
@@ -12,34 +13,44 @@ DataController.getProviders = asyncHandler(async (req, res) => {
         data: providers,
     });
 });
+// GET /data/plans?serviceCategoryId=...
 DataController.getPlans = asyncHandler(async (req, res) => {
-    const { serviceID } = req.query;
-    if (!serviceID) {
-        throw new ApiError(400, "serviceID is required");
+    const { serviceCategoryId } = req.query;
+    if (!serviceCategoryId) {
+        throw new ApiError(400, "serviceCategoryId is required");
     }
-    const plans = await DataService.getPlans(serviceID);
+    const plans = await DataService.getPlans(serviceCategoryId);
     res.json({
         success: true,
         data: plans,
     });
 });
+// POST /data/purchase
 DataController.purchaseData = asyncHandler(async (req, res) => {
-    const { serviceID, planId, phone } = req.body;
     const userId = req.user?.userId;
     if (!userId) {
         throw new ApiError(401, "Unauthorized");
     }
+    const { serviceCategoryId, bundleCode, phone, amount, debitAccountNumber, statusUrl, } = req.body;
+    if (!serviceCategoryId || !bundleCode || !phone || !amount || !debitAccountNumber) {
+        throw new ApiError(400, "Missing required fields");
+    }
     const transaction = await DataService.purchaseData({
         userId,
-        serviceID,
-        planId,
+        serviceCategoryId,
+        bundleCode,
         phone,
+        amount,
+        debitAccountNumber,
+        statusUrl,
     });
     res.status(201).json({
         success: true,
+        message: "Data purchase successful",
         data: transaction,
     });
 });
+// GET /data/status/:reference
 DataController.getStatus = asyncHandler(async (req, res) => {
     const reference = req.params.reference;
     const transaction = await DataService.getStatus(reference);

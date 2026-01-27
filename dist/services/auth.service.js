@@ -7,20 +7,16 @@ import { generateOTP, hashOTP } from "../shared/helpers/otp.helpers.js";
 import { Wallet } from "../model/Wallet.model.js";
 import mongoose from "mongoose";
 import { sendOTPSMS } from "../shared/helpers/otp.helper.js";
+import { SafeHavenProvider } from "../providers/safeHeaven.provider.js";
 export class AuthService {
-    // Inside AuthService.ts
     static validateAndFormatPhone(phoneNumber) {
-        // Remove spaces and plus sign
         let cleanPhone = phoneNumber.replace(/\s+/g, "").replace(/^\+/, "");
-        // If starts with 0, replace with 234
         if (cleanPhone.startsWith("0")) {
             cleanPhone = "234" + cleanPhone.slice(1);
         }
-        // If does not start with 234 now, optionally prepend it
         else if (!cleanPhone.startsWith("234")) {
             cleanPhone = "234" + cleanPhone;
         }
-        // Regex for Nigerian phone numbers in international format (234 + 10 digits)
         const nigerianFormatRegex = /^234[789]\d{9}$/;
         if (!nigerianFormatRegex.test(cleanPhone)) {
             throw new ApiError(400, "Invalid phone format. Use Nigerian international format without '+' (e.g., 2348012345678)");
@@ -41,32 +37,23 @@ export class AuthService {
             const hashedPassword = await hashPassword(password);
             const otp = generateOTP();
             const hashedOtp = hashOTP(otp);
-            try {
-                await sendOTPSMS(formattedPhone, otp);
-            }
-            catch (error) {
-                console.error("SMS OTP failed:", error);
-                throw new ApiError(500, "Unable to send OTP SMS");
-            }
-            const user = await User.create([
-                {
-                    fullName,
-                    email,
-                    password: hashedPassword,
-                    phoneNumber: formattedPhone,
-                    phoneOtp: hashedOtp,
-                    phoneOtpExpiry: new Date(Date.now() + 10 * 60 * 1000),
-                    isPhoneVerified: false,
-                },
-            ], { session });
-            await Wallet.create([
-                {
+            await sendOTPSMS(formattedPhone, otp);
+            const userDoc = {
+                fullName,
+                email,
+                password: hashedPassword,
+                phoneNumber: formattedPhone,
+                phoneOtp: hashedOtp,
+                phoneOtpExpiry: new Date(Date.now() + 10 * 60 * 1000),
+                isPhoneVerified: false,
+            };
+            const user = await User.create([userDoc], { session });
+            await Wallet.create([{
                     userId: user[0]._id,
                     balance: 0,
                     reservedBalance: 0,
                     currency: "NGN",
-                },
-            ], { session });
+                }], { session });
             await session.commitTransaction();
             return user[0];
         }
@@ -86,9 +73,7 @@ export class AuthService {
         if (!isValid)
             throw new ApiError(401, "Invalid credentials");
         if (!user.isPhoneVerified) {
-            //  Re-send OTP safely (rate-limited inside)
             await AuthService.resendOTP(user.phoneNumber);
-            // Stop login flow here
             throw new ApiError(403, JSON.stringify({
                 code: "PHONE_NOT_VERIFIED",
                 phoneNumber: user.phoneNumber,
@@ -113,30 +98,21 @@ export class AuthService {
         if (!user)
             throw new ApiError(401, "Invalid refresh token");
         const userId = user._id.toString();
-        const accessToken = TokenService.generateAccessToken({
-            userId,
-            role: user.role,
-        });
+        const accessToken = TokenService.generateAccessToken({ userId, role: user.role });
         const newRefreshToken = TokenService.generateRefreshToken(userId);
-        // ROTATE refresh token
         user.refreshToken = newRefreshToken;
         await user.save();
-        return {
-            accessToken,
-            refreshToken: newRefreshToken,
-        };
+        return { accessToken, refreshToken: newRefreshToken };
     }
     static async forgotPassword(email) {
         const user = await User.findOne({ email });
         if (!user)
             throw new ApiError(404, "User not found");
-        // Generate token (can use crypto or UUID)
         const token = crypto.randomBytes(32).toString("hex");
-        const expiry = new Date(Date.now() + 3600000); // 1 hour from now
+        const expiry = new Date(Date.now() + 3600000); // 1 hour
         user.forgotPasswordToken = token;
         user.forgotPasswordExpiry = expiry;
         await user.save();
-        // Send token via email service here (outside service responsibility)
         return token;
     }
     static async resetPassword(token, newPassword) {
@@ -153,21 +129,70 @@ export class AuthService {
     }
     static async verifyPhoneOTP(phoneNumber, otp) {
         const formattedPhone = this.validateAndFormatPhone(phoneNumber);
-        const user = await User.findOne({ phoneNumber: formattedPhone });
-        if (!user)
-            throw new ApiError(404, "User not found");
-        if (!user.phoneOtp || !user.phoneOtpExpiry)
-            throw new ApiError(400, "No OTP found");
-        if (user.phoneOtpExpiry < new Date())
-            throw new ApiError(400, "OTP expired");
-        const hashedOtp = hashOTP(otp);
-        if (hashedOtp !== user.phoneOtp)
-            throw new ApiError(400, "Invalid OTP");
-        user.isPhoneVerified = true;
-        user.phoneOtp = undefined;
-        user.phoneOtpExpiry = undefined;
-        await user.save();
-        return { message: "Phone number verified successfully" };
+        const session = await mongoose.startSession();
+        session.startTransaction();
+        try {
+            const user = await User.findOne({ phoneNumber: formattedPhone }).session(session);
+            if (!user)
+                throw new ApiError(404, "User not found");
+            if (!user.phoneOtp || !user.phoneOtpExpiry) {
+                throw new ApiError(400, "No OTP found");
+            }
+            if (user.phoneOtpExpiry < new Date()) {
+                throw new ApiError(400, "OTP expired");
+            }
+            if (hashOTP(otp) !== user.phoneOtp) {
+                throw new ApiError(400, "Invalid OTP");
+            }
+            //  Mark phone as verified
+            user.isPhoneVerified = true;
+            user.phoneOtp = undefined;
+            user.phoneOtpExpiry = undefined;
+            // If wallet already exists, stop here
+            if (user.safeHavenAccount?.accountNumber) {
+                await user.save({ session });
+                await session.commitTransaction();
+                return {
+                    message: "Phone number verified successfully",
+                    subAccount: user.safeHavenAccount,
+                };
+            }
+            // KYC checks
+            if (!user.isKycVerified) {
+                throw new ApiError(403, "Your identity has not been verified yet. Please complete BVN verification.");
+            }
+            if (!user.safeHavenIdentityId) {
+                throw new ApiError(403, "Identity verification reference missing. Please reverify your BVN.");
+            }
+            // ✅ Create Safe Haven sub-account (CORRECT)
+            const safeHavenData = await SafeHavenProvider.createSubAccount({
+                phone: formattedPhone,
+                email: user.email,
+                externalReference: user._id.toString(),
+                identityType: "BVN",
+                identityNumber: user.bvn,
+                identityId: user.safeHavenIdentityId,
+            });
+            user.safeHavenAccount = {
+                accountNumber: safeHavenData.accountNumber,
+                accountName: safeHavenData.accountName || user.fullName,
+                bankCode: safeHavenData.bankCode,
+                accountReference: safeHavenData.reference || safeHavenData.id,
+            };
+            await user.save({ session });
+            await session.commitTransaction();
+            return {
+                message: "Phone number verified successfully. Wallet account created.",
+                subAccount: user.safeHavenAccount,
+            };
+        }
+        catch (error) {
+            await session.abortTransaction();
+            throw error;
+        }
+        finally {
+            session.endSession();
+        }
     }
     static async resendOTP(phoneNumber) {
         const formattedPhone = this.validateAndFormatPhone(phoneNumber);
@@ -175,27 +200,22 @@ export class AuthService {
         if (!user)
             throw new ApiError(404, "User not found");
         const now = new Date();
-        /** ================= RATE LIMIT ================= */
         if (user.otpResendLimit && user.otpResendLimit >= 5) {
             throw new ApiError(429, "Maximum OTP resend attempts reached");
         }
-        /** ================= COOLDOWN ================= */
         if (user.otpResendTimestamp) {
             const diffSeconds = (now.getTime() - user.otpResendTimestamp.getTime()) / 1000;
             if (diffSeconds < 60) {
                 throw new ApiError(429, `Please wait ${Math.ceil(60 - diffSeconds)} seconds before resending OTP`);
             }
         }
-        /** ================= GENERATE NEW OTP ================= */
         const otp = generateOTP();
         const hashedOtp = hashOTP(otp);
-        /** ================= UPDATE USER ================= */
         user.phoneOtp = hashedOtp;
-        user.phoneOtpExpiry = new Date(now.getTime() + 10 * 60 * 1000); // 10 mins
+        user.phoneOtpExpiry = new Date(now.getTime() + 10 * 60 * 1000);
         user.otpResendTimestamp = now;
         user.otpResendLimit = (user.otpResendLimit || 0) + 1;
         await user.save();
-        /** ================= SEND SMS ================= */
         try {
             await sendOTPSMS(formattedPhone, otp);
         }
@@ -203,8 +223,6 @@ export class AuthService {
             console.error("OTP SMS resend failed:", error);
             throw new ApiError(500, "Failed to resend OTP");
         }
-        return {
-            message: "OTP resent successfully",
-        };
+        return { message: "OTP resent successfully" };
     }
 }

@@ -1,101 +1,60 @@
 import { Transaction } from "../model/Transaction.model.js";
 import { Wallet } from "../model/Wallet.model.js";
-import { VTPassProvider } from "../providers/vtpass.provider.js";
+import { SafeHavenProvider } from "../providers/safeHeaven.provider.js";
 import { ApiError } from "../shared/errors/api.error.js";
 
 export class DataService {
+  /**
+   * Get available Data providers
+   */
   static async getProviders() {
-    return [
-      { code: "mtn-data", name: "MTN Data" },
-      { code: "airtel-data", name: "Airtel Data" },
-      { code: "glo-data", name: "Glo Data" },
-      { code: "9mobile-data", name: "9mobile Data" },
-    ];
+    // Use SafeHaven dynamic providers
+    const providers = await SafeHavenProvider.getDataProviders();
+    return providers.map(p => ({
+      code: p.code,
+      name: p.name,
+      id: p.id,          // serviceCategoryId
+      productId: p.productId,
+    }));
   }
 
-static async getPlans(serviceID: string) {
-  // Map frontend IDs to VTpass service IDs
-  const serviceMap: Record<string, string> = {
-    "mtn-data": "mtn-data",
-    "airtel-data": "airtel-data",
-    "glo-data": "glo-data", // VTpass uses "glo"
-    "9mobile-data": "etisalat-data",
-  };
+  /**
+   * Get available data plans for a provider
+   */
+  static async getPlans(serviceCategoryId: string) {
+    const plans = await SafeHavenProvider.getDataPlans(serviceCategoryId);
 
-  const mappedServiceID = serviceMap[serviceID];
-
-  if (!mappedServiceID) {
-    throw new ApiError(400, "Invalid service ID");
-  }
-
-  let response;
-  try {
-    response = await VTPassProvider.getDataPlans(mappedServiceID);
-  } catch (error: any) {
-    console.error("VTpass request failed:", error?.response?.data || error);
-    throw new ApiError(503, "Data provider unavailable");
-  }
-
-  console.log("VTpass response:", response);
-
-  // Correct success check (VTpass data endpoint)
-  const isSuccess =
-    response?.response_description === "000" ||
-    response?.code === "000";
-
-  if (!isSuccess) {
-    console.error("VTpass error response:", response);
-    throw new ApiError(
-      400,
-      response?.response_description || "Unable to fetch data plans"
-    );
-  }
-
-  //  Handle VTpass typo
-  const variations =
-    response?.content?.variations ||
-    response?.content?.varations ||
-    [];
-
-  if (!variations.length) {
-    throw new ApiError(404, "No data plans available");
-  }
-
-  return variations;
-}
-
-
-
-  static async purchaseData(data: {
-    userId: string;
-    serviceID: string;
-    planId: string;
-    phone: string;
-  }) {
-    // Fetch plans server-side
-    const plans = await this.getPlans(data.serviceID);
-    console.log(plans);
-    const plan = plans.find((p: any) => p.variation_code === data.planId);
-
-    console.log(plan);
-
-    if (!plan) {
-      throw new ApiError(400, "Invalid data plan selected");
+    if (!plans.length) {
+      throw new ApiError(404, "No data plans available for this provider");
     }
 
-    const amount = Number(plan.variation_amount);
+    return plans;
+  }
+
+  /**
+   * Purchase a data bundle
+   */
+  static async purchaseData(data: {
+    userId: string;
+    serviceCategoryId: string; // from provider
+    bundleCode: string;        // from selected plan
+    phone: string;
+    amount: number;
+    debitAccountNumber: string;
+    statusUrl?: string;
+  }) {
     const reference = `DATA-${Date.now()}`;
 
-    // Prevent duplicates
+    // Prevent duplicate transaction
     const existing = await Transaction.findOne({ reference });
     if (existing) {
       throw new ApiError(409, "Duplicate transaction");
     }
 
-    // Atomic wallet debit
+    // Debit wallet atomically
     const wallet = await Wallet.findOneAndUpdate(
-      { userId: data.userId, balance: { $gte: amount } },
-      { $inc: { balance: -amount } },
+      { userId: data.userId, balance: { $gte: data.amount } },
+      { $inc: { balance: -data.amount } },
       { new: true }
     );
 
@@ -108,53 +67,57 @@ static async getPlans(serviceID: string) {
       userId: data.userId,
       type: "debit",
       source: "data",
-      amount,
+      amount: data.amount,
       reference,
       status: "pending",
       meta: {
         phone: data.phone,
-        plan,
+        bundleCode: data.bundleCode,
       },
     });
 
     try {
-      const response = await VTPassProvider.purchaseData({
-        serviceID: data.serviceID,
-        billersCode: data.phone,
-        variation_code: plan.variation_code,
-        amount,
-        request_id: reference,
+      // Call SafeHaven purchase
+      const response = await SafeHavenProvider.purchaseData({
+        serviceCategoryId: data.serviceCategoryId,
+        phone: data.phone,
+        bundleCode: data.bundleCode,
+        amount: data.amount,
+        debitAccountNumber: data.debitAccountNumber,
+        reference,
+        statusUrl: data.statusUrl,
       });
-
-      if (response.code !== "000") {
-        throw new Error("VTpass failed");
-      }
 
       transaction.status = "success";
       transaction.meta.providerResponse = response;
       await transaction.save();
 
       return transaction;
-    } catch (error) {
-      // Refund wallet
+    } catch (err) {
+      // Refund wallet on failure
       await Wallet.findOneAndUpdate(
         { userId: data.userId },
-        { $inc: { balance: amount } }
+        { $inc: { balance: data.amount } }
       );
 
       transaction.status = "failed";
-      transaction.meta.error = "Data purchase failed";
+      transaction.meta.error = err instanceof Error ? err.message : err;
       await transaction.save();
 
       throw new ApiError(400, "Data subscription failed");
     }
   }
 
+  /**
+   * Check data transaction status
+   */
   static async getStatus(reference: string) {
     const transaction = await Transaction.findOne({ reference });
+
     if (!transaction) {
       throw new ApiError(404, "Transaction not found");
     }
+
     return transaction;
   }
 }

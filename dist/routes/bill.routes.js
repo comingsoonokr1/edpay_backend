@@ -109,5 +109,5 @@ router.post("/pay", validate(payBillSchema), BillController.payBill);
  *       401:
  *         description: Unauthorized
  */
-router.get("/status/:reference", validate(billStatusSchema), BillController.getstatus);
+router.get("/status/:reference", validate(billStatusSchema), BillController.getBillStatus);
 export default router;
