@@ -1,3 +1,6 @@
+import dotenv from "dotenv";
+dotenv.config();
+
 import axios, { AxiosInstance } from "axios";
 import { ApiError } from "../shared/errors/api.error.js";
 import crypto from "crypto";
