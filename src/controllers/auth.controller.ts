@@ -97,19 +97,47 @@ export class AuthController {
     }
   });
 
- static async submitBVN(req: Request, res: Response) {
-  const { bvn, identityId, transactionPin } = req.body;
+ 
+static initiateBVN = asyncHandler(async (req: Request, res: Response) => {
+  const { bvn } = req.body;
   const userId = req.user!.userId;
 
-  const result = await AuthService.submitBVNAndCreateWallet(
+  if (!bvn) {
+    throw new ApiError(400, "BVN is required");
+  }
+
+  const result = await AuthService.initiateBVN(userId, bvn);
+
+  res.status(200).json({
+    success: true,
+    message: result.message,
+    data: {
+      identityId: result.identityId,
+    },
+  });
+});
+
+static validateBVN = asyncHandler(async (req: Request, res: Response) => {
+  const { identityId, otp, transactionPin } = req.body;
+  const userId = req.user!.userId;
+
+  if (!identityId || !otp || !transactionPin) {
+    throw new ApiError(400, "identityId, otp, and transactionPin are required");
+  }
+
+  const result = await AuthService.validateBVNAndCreateWallet(
     userId,
-    bvn,
     identityId,
+    otp,
     transactionPin
   );
 
-  return res.status(200).json(result);
-}
+  res.status(200).json({
+    success: true,
+    message: result.message,
+    data: result.wallet,
+  });
+});
 
 
 }

@@ -1,13 +1,8 @@
 var _a;
 import { AuthService } from "../services/auth.service.js";
 import { asyncHandler } from "../shared/utils/asyncHandler.js";
+import { ApiError } from "../shared/errors/api.error.js";
 export class AuthController {
-    static async submitBVN(req, res) {
-        const { bvn, identityId, transactionPin } = req.body;
-        const userId = req.user.userId;
-        const result = await AuthService.submitBVNAndCreateWallet(userId, bvn, identityId, transactionPin);
-        return res.status(200).json(result);
-    }
 }
 _a = AuthController;
 AuthController.register = asyncHandler(async (req, res) => {
@@ -80,4 +75,32 @@ AuthController.resendOTP = asyncHandler(async (req, res, next) => {
     catch (err) {
         next(err);
     }
+});
+AuthController.initiateBVN = asyncHandler(async (req, res) => {
+    const { bvn } = req.body;
+    const userId = req.user.userId;
+    if (!bvn) {
+        throw new ApiError(400, "BVN is required");
+    }
+    const result = await AuthService.initiateBVN(userId, bvn);
+    res.status(200).json({
+        success: true,
+        message: result.message,
+        data: {
+            identityId: result.identityId,
+        },
+    });
+});
+AuthController.validateBVN = asyncHandler(async (req, res) => {
+    const { identityId, otp, transactionPin } = req.body;
+    const userId = req.user.userId;
+    if (!identityId || !otp || !transactionPin) {
+        throw new ApiError(400, "identityId, otp, and transactionPin are required");
+    }
+    const result = await AuthService.validateBVNAndCreateWallet(userId, identityId, otp, transactionPin);
+    res.status(200).json({
+        success: true,
+        message: result.message,
+        data: result.wallet,
+    });
 });

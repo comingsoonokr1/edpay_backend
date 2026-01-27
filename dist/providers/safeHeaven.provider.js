@@ -389,6 +389,41 @@ export class SafeHavenProvider {
             throw new ApiError(err.response?.status || 500, `Bill payment failed: ${err.response?.data?.message || err.message}`);
         }
     }
+    static async initiateVerification(payload) {
+        const api = await this.getAuthorizedInstance();
+        try {
+            const response = await api.post("/identity/v2", {
+                ...payload,
+                async: payload.async ?? true,
+            }, {
+                headers: {
+                    ClientID: CLIENT_ID,
+                },
+            });
+            return response.data; // contains _id (identityId)
+        }
+        catch (err) {
+            throw new ApiError(err.response?.status || 500, `SafeHaven identity initiation failed: ${err.response?.data?.message || err.message}`);
+        }
+    }
+    static async validateVerification(payload) {
+        const api = await this.getAuthorizedInstance();
+        try {
+            const response = await api.post("/identity/v2/validate", {
+                identityId: payload.identityId,
+                type: payload.type,
+                otp: payload.otp,
+            }, {
+                headers: {
+                    ClientID: CLIENT_ID,
+                },
+            });
+            return response.data; // status: VERIFIED + verified data
+        }
+        catch (err) {
+            throw new ApiError(err.response?.status || 500, `SafeHaven identity validation failed: ${err.response?.data?.message || err.message}`);
+        }
+    }
 }
 SafeHavenProvider.axiosInstance = null;
 SafeHavenProvider.tokenExpiry = 0;

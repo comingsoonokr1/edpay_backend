@@ -2,7 +2,7 @@ import { Router } from "express";
 import { AuthController } from "../controllers/auth.controller.js";
 import { validate } from "../middlewares/validate.middleware.js";
 import { loginLimiter, registerLimiter, forgotPasswordLimiter, refreshTokenLimiter, resendOTPLimiter, } from "../middlewares/rate.middleware.js";
-import { registerSchema, loginSchema, refreshTokenSchema, forgotPasswordSchema, resetPasswordSchema, resendOTPSchema, verifyPhoneOTPSchema, submitBVNSchema, } from "../schemas/auth.schema.js";
+import { registerSchema, loginSchema, refreshTokenSchema, forgotPasswordSchema, resetPasswordSchema, resendOTPSchema, verifyPhoneOTPSchema, } from "../schemas/auth.schema.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 const router = Router();
 /**
@@ -178,5 +178,6 @@ router.post("/logout", authMiddleware, AuthController.logout);
  *       401:
  *         description: Unauthorized
  */
-router.post("/submit-bvn", authMiddleware, validate(submitBVNSchema), AuthController.submitBVN);
+router.post("/bvn/initiate", authMiddleware, AuthController.initiateBVN);
+router.post("/bvn/validate", authMiddleware, AuthController.validateBVN);
 export default router;

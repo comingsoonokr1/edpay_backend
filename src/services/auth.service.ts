@@ -255,67 +255,97 @@ export class AuthService {
   }
 
 
-  static async submitBVNAndCreateWallet(
-    userId: string,
-    bvn: string,
-    identityId: string,
-    transactionPin: string
-  ) {
-    // Validate PIN
-    if (!/^\d{4}$/.test(transactionPin)) {
-      throw new ApiError(400, "Transaction PIN must be 4 digits");
-    }
+static async initiateBVN(userId: string, bvn: string) {
+  const user = await User.findById(userId);
+  if (!user) throw new ApiError(404, "User not found");
 
-    const user = await User.findById(userId);
-    if (!user) throw new ApiError(404, "User not found");
+  const identity = await SafeHavenProvider.initiateVerification({
+    type: "BVN",
+    number: bvn,
+  });
 
-    // Must have verified phone first
-    if (!user.isPhoneVerified) {
-      throw new ApiError(403, "Phone not verified. Complete OTP verification first.");
-    }
+  return {
+    message: "OTP sent to BVN registered phone number",
+    identityId: identity._id, // IMPORTANT
+  };
+}
 
-    // Start transaction
-    const session = await mongoose.startSession();
-    session.startTransaction();
 
-    try {
-      // Update BVN and identity info
-      user.bvn = bvn;
-      user.safeHavenIdentityId = identityId;
-      user.isKycVerified = true;
-      user.transactionPin = await hashPassword(transactionPin); // hash the PIN
-
-      // Create Safe Haven sub-account if it doesn't exist
-      if (!user.safeHavenAccount?.accountNumber) {
-        const safeHavenData = await SafeHavenProvider.createSubAccount({
-          phone: user.phoneNumber,
-          email: user.email,
-          externalReference: user._id.toString(),
-          identityType: "BVN",
-          identityNumber: bvn,
-          identityId: identityId,
-        });
-
-        user.safeHavenAccount = {
-          accountNumber: safeHavenData.accountNumber,
-          accountName: safeHavenData.accountName || user.fullName,
-          bankCode: safeHavenData.bankCode,
-          accountReference: safeHavenData.reference || safeHavenData.id,
-        };
-      }
-
-      await user.save({ session });
-      await session.commitTransaction();
-
-      return {
-        message: "BVN submitted and Safe Haven account created successfully.",
-        subAccount: user.safeHavenAccount,
-      };
-    } catch (error) {
-      await session.abortTransaction();
-      throw error;
-    } finally {
-      session.endSession();
-    }
+static async validateBVNAndCreateWallet(
+  userId: string,
+  identityId: string,
+  otp: string,
+  transactionPin: string
+) {
+  if (!/^\d{4}$/.test(transactionPin)) {
+    throw new ApiError(400, "Transaction PIN must be 4 digits");
   }
+
+  const user = await User.findById(userId);
+  if (!user) throw new ApiError(404, "User not found");
+
+  const session = await mongoose.startSession();
+  session.startTransaction();
+
+  try {
+    /**
+     * 1️⃣ Validate OTP
+     */
+    const verification = await SafeHavenProvider.validateVerification({
+      identityId,
+      type: "BVN",
+      otp,
+    });
+
+    if (verification.status !== "verified") {
+      throw new ApiError(400, "BVN verification failed");
+    }
+
+    /**
+     * 2️⃣ Save KYC data
+     */
+    user.bvn = verification.data.bvn;
+    user.safeHavenIdentityId = identityId;
+    user.isKycVerified = true;
+    user.transactionPin = await hashPassword(transactionPin);
+
+    /**
+     * 3️⃣ Create Wallet
+     */
+    if (!user.safeHavenAccount?.accountNumber) {
+      const account = await SafeHavenProvider.createSubAccount({
+        phone: user.phoneNumber,
+        email: user.email,
+        externalReference: user._id.toString(),
+        identityType: "BVN",
+        identityNumber: user.bvn!,
+        identityId,
+      });
+
+      user.safeHavenAccount = {
+        accountNumber: account.accountNumber,
+        accountName: account.accountName || user.fullName,
+        bankCode: account.bankCode,
+        accountReference: account.reference || account.id,
+        createdAt: new Date(),
+      };
+    }
+
+    await user.save({ session });
+    await session.commitTransaction();
+
+    return {
+      message: "BVN verified and wallet created successfully",
+      wallet: user.safeHavenAccount,
+    };
+  } catch (error) {
+    await session.abortTransaction();
+    throw error;
+  } finally {
+    session.endSession();
+  }
+}
+
+
+
 }

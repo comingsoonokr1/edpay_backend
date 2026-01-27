@@ -246,11 +246,8 @@ router.post(
  *       401:
  *         description: Unauthorized
  */
-router.post(
-  "/submit-bvn",
-  authMiddleware,
-  validate(submitBVNSchema),
-  AuthController.submitBVN
-);
+router.post("/bvn/initiate", authMiddleware, AuthController.initiateBVN);
+router.post("/bvn/validate", authMiddleware, AuthController.validateBVN);
+
 
 export default router;
