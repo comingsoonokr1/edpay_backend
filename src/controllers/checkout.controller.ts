@@ -1,5 +1,5 @@
 import { Request, Response } from "express";
-import { CheckoutService } from "../services/checkout.service";
+import { CheckoutService } from "../services/checkout.service.js";
 
 export class CheckoutController {
   static async verifyCheckout(req: Request, res: Response) {

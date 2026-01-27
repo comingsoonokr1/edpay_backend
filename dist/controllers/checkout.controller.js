@@ -1,4 +1,4 @@
-import { CheckoutService } from "../services/checkout.service";
+import { CheckoutService } from "../services/checkout.service.js";
 export class CheckoutController {
     static async verifyCheckout(req, res) {
         const { reference } = req.params;

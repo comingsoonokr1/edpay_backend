@@ -1,8 +1,8 @@
 import mongoose from "mongoose";
-import { Transaction } from "../model/Transaction.model";
-import { SafeHavenProvider } from "../providers/safeHeaven.provider";
-import { ApiError } from "../shared/errors/api.error";
-import { Wallet } from "../model/Wallet.model";
+import { Transaction } from "../model/Transaction.model.js";
+import { SafeHavenProvider } from "../providers/safeHeaven.provider.js";
+import { ApiError } from "../shared/errors/api.error.js";
+import { Wallet } from "../model/Wallet.model.js";
 export class CheckoutService {
     static async verifyCheckout(reference, userId) {
         const session = await mongoose.startSession();
