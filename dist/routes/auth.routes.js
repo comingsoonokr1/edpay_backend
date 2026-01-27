@@ -1,8 +1,8 @@
 import { Router } from "express";
 import { AuthController } from "../controllers/auth.controller.js";
 import { validate } from "../middlewares/validate.middleware.js";
-import { loginLimiter, registerLimiter, forgotPasswordLimiter, refreshTokenLimiter, } from "../middlewares/rate.middleware.js";
-import { registerSchema, loginSchema, refreshTokenSchema, forgotPasswordSchema, resetPasswordSchema, } from "../schemas/auth.schema.js";
+import { loginLimiter, registerLimiter, forgotPasswordLimiter, refreshTokenLimiter, resendOTPLimiter, } from "../middlewares/rate.middleware.js";
+import { registerSchema, loginSchema, refreshTokenSchema, forgotPasswordSchema, resetPasswordSchema, resendOTPSchema, verifyPhoneOTPSchema, } from "../schemas/auth.schema.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 const router = Router();
 /**
@@ -106,9 +106,9 @@ router.post("/forgot-password", forgotPasswordLimiter, validate(forgotPasswordSc
 router.post("/reset-password", validate(resetPasswordSchema), AuthController.resetPassword);
 /**
  * @swagger
- * /auth/verify-email:
+ * /auth/verify-phone:
  *   post:
- *     summary: Verify email using OTP
+ *     summary: Verify phone number using OTP
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -130,7 +130,8 @@ router.post("/reset-password", validate(resetPasswordSchema), AuthController.res
  *       401:
  *         description: Invalid or expired OTP
  */
-router.post("/verify-phone", AuthController.verifyPhone);
+router.post("/verify-phone", validate(verifyPhoneOTPSchema), AuthController.verifyPhoneOTP);
+router.post("/resend-otp", resendOTPLimiter, validate(resendOTPSchema), AuthController.resendOTP);
 /**
  * @swagger
  * /auth/logout:

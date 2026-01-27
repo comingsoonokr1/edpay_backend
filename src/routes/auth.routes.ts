@@ -14,6 +14,8 @@ import {
   refreshTokenSchema,
   forgotPasswordSchema,
   resetPasswordSchema,
+  resendOTPSchema,
+  verifyPhoneOTPSchema,
 } from "../schemas/auth.schema.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 
@@ -151,9 +153,9 @@ router.post(
 
 /**
  * @swagger
- * /auth/verify-email:
+ * /auth/verify-phone:
  *   post:
- *     summary: Verify email using OTP
+ *     summary: Verify phone number using OTP
  *     tags: [Auth]
  *     requestBody:
  *       required: true
@@ -177,10 +179,17 @@ router.post(
  */
 router.post(
   "/verify-phone",
-  AuthController.verifyPhone
+  validate(verifyPhoneOTPSchema),
+  AuthController.verifyPhoneOTP
 );
 
 
+router.post(
+  "/resend-otp",
+  resendOTPLimiter,
+  validate(resendOTPSchema),
+  AuthController.resendOTP
+);
 
 
 /**

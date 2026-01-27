@@ -1,7 +1,6 @@
 var _a;
 import { AuthService } from "../services/auth.service.js";
 import { asyncHandler } from "../shared/utils/asyncHandler.js";
-import { ApiError } from "../shared/errors/api.error.js";
 export class AuthController {
 }
 _a = AuthController;
@@ -10,7 +9,7 @@ AuthController.register = asyncHandler(async (req, res) => {
     await AuthService.register(fullName, email, password, phoneNumber);
     res.status(201).json({
         success: true,
-        message: "User registered successfully, OTP sent to email",
+        message: "User registered successfully, OTP sent to phone number",
     });
 });
 AuthController.login = asyncHandler(async (req, res) => {
@@ -55,14 +54,24 @@ AuthController.resetPassword = asyncHandler(async (req, res) => {
         message: "Password reset successful",
     });
 });
-AuthController.verifyPhone = asyncHandler(async (req, res) => {
-    const { phoneNumber, idToken } = req.body;
-    if (!phoneNumber || !idToken) {
-        throw new ApiError(400, "Phone number and verification token are required");
-    }
-    const result = await AuthService.verifyPhone(phoneNumber, idToken);
-    res.status(200).json({
+AuthController.verifyPhoneOTP = asyncHandler(async (req, res) => {
+    const { phoneNumber, otp } = req.body;
+    await AuthService.verifyPhoneOTP(phoneNumber, otp);
+    res.json({
         success: true,
-        message: result.message,
+        message: "Phone number verified successfully",
     });
+});
+AuthController.resendOTP = asyncHandler(async (req, res, next) => {
+    try {
+        const { phoneNumber } = req.body;
+        const result = await AuthService.resendOTP(phoneNumber);
+        res.json({
+            success: true,
+            message: "OTP resent successfully",
+        });
+    }
+    catch (err) {
+        next(err);
+    }
 });
