@@ -6,10 +6,10 @@ import { ApiError } from "../shared/errors/api.error.js";
 import crypto from "crypto";
 import jwt from "jsonwebtoken";
 
-const BASE_URL =
-    process.env.NODE_ENV === "production"
-        ? "https://api.safehavenmfb.com"
-        : "https://api.sandbox.safehavenmfb.com";
+const BASE_URL = "https://api.sandbox.safehavenmfb.com"
+    // process.env.NODE_ENV === "production"
+    //     ? "https://api.safehavenmfb.com"
+    //     : "https://api.sandbox.safehavenmfb.com";
 
 const CLIENT_ID = process.env.SAFEHAVEN_CLIENT_ID!;
 const PRIVATE_KEY = process.env.SAFE_HAVEN_PRIVATE_KEY!; // RSA PRIVATE KEY
@@ -69,7 +69,7 @@ export class SafeHavenProvider {
 
             const { access_token, expires_in } = response.data;
 
-            this.tokenExpiry = Date.now() + expires_in * 1000 - 30_000;
+            this.tokenExpiry = Date.now() + expires_in * 1000 - 300_000;
             return access_token;
         } catch (err: any) {
             throw new ApiError(

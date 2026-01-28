@@ -87,8 +87,6 @@ export class AuthService {
   static async login(email: string, password: string) {
     const user = await User.findOne({ email });
     if (!user) throw new ApiError(401, "Invalid credentials");
-
-    console.log(password, user);
     
     
     const isValid = await comparePassword(password, user.password);
