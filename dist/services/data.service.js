@@ -15,7 +15,6 @@ export class DataService {
             code: p.code,
             name: p.name,
             id: p.id, // serviceCategoryId
-            productId: p.productId,
         }));
     }
     /**
@@ -72,7 +71,7 @@ export class DataService {
                 phone: data.phone,
                 bundleCode: data.bundleCode,
                 amount: data.amount,
-                debitAccountNumber: data.debitAccountNumber,
+                debitAccountNumber: user.safeHavenAccount?.accountNumber || "",
                 reference,
                 statusUrl: data.statusUrl,
             });

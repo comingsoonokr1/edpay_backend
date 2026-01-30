@@ -5,18 +5,23 @@ import { SafeHavenProvider } from "../providers/safeHeaven.provider.js";
 import { ApiError } from "../shared/errors/api.error.js";
 import { comparePassword } from "../shared/helpers/password.helper.js";
 
+type DataProvider = {
+  code: string;
+  name: string;
+  id: string;
+};
+
 export class DataService {
   /**
    * Get available Data providers
    */
   static async getProviders() {
     // Use SafeHaven dynamic providers
-    const providers = await SafeHavenProvider.getDataProviders();
+    const providers: DataProvider[] = await SafeHavenProvider.getDataProviders();
     return providers.map(p => ({
       code: p.code,
       name: p.name,
       id: p.id,          // serviceCategoryId
-      productId: p.productId,
     }));
   }
 
@@ -42,7 +47,6 @@ export class DataService {
     bundleCode: string;        // from selected plan
     phone: string;
     amount: number;
-    debitAccountNumber: string;
     transactionPin: string;
     statusUrl?: string;
   }) {
@@ -94,7 +98,7 @@ export class DataService {
         phone: data.phone,
         bundleCode: data.bundleCode,
         amount: data.amount,
-        debitAccountNumber: data.debitAccountNumber,
+        debitAccountNumber: user.safeHavenAccount?.accountNumber || "",
         reference,
         statusUrl: data.statusUrl,
       });

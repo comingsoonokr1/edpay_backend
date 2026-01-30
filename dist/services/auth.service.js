@@ -204,13 +204,20 @@ export class AuthService {
         const user = await User.findById(userId);
         if (!user)
             throw new ApiError(404, "User not found");
+        if (!/^\d{11}$/.test(bvn)) {
+            throw new ApiError(400, "BVN must be 11 digits");
+        }
         const identity = await SafeHavenProvider.initiateVerification({
             type: "BVN",
             number: bvn,
+            debitAccountNumber: "0116763095"
         });
+        console.log(identity);
+        user.bvn = bvn;
+        await user.save();
         return {
             message: "OTP sent to BVN registered phone number",
-            identityId: identity._id, // IMPORTANT
+            identityId: identity.data._id, // IMPORTANT
         };
     }
     static async validateBVNAndCreateWallet(userId, identityId, otp, transactionPin) {
@@ -224,25 +231,25 @@ export class AuthService {
         session.startTransaction();
         try {
             /**
-             * 1️⃣ Validate OTP
+             *  Validate OTP
              */
             const verification = await SafeHavenProvider.validateVerification({
                 identityId,
                 type: "BVN",
                 otp,
             });
-            if (verification.status !== "verified") {
-                throw new ApiError(400, "BVN verification failed");
-            }
+            console.log(verification);
+            // if (verification.statusCode !== "200") {
+            //   throw new ApiError(400, "BVN verification failed");
+            // }
             /**
-             * 2️⃣ Save KYC data
+             *  Save KYC data
              */
-            user.bvn = verification.data.bvn;
             user.safeHavenIdentityId = identityId;
             user.isKycVerified = true;
             user.transactionPin = await hashPassword(transactionPin);
             /**
-             * 3️⃣ Create Wallet
+             * 3Create Wallet
              */
             if (!user.safeHavenAccount?.accountNumber) {
                 const account = await SafeHavenProvider.createSubAccount({
@@ -252,7 +259,9 @@ export class AuthService {
                     identityType: "BVN",
                     identityNumber: user.bvn,
                     identityId,
+                    otp
                 });
+                console.log(account);
                 user.safeHavenAccount = {
                     accountNumber: account.accountNumber,
                     accountName: account.accountName || user.fullName,

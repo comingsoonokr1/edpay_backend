@@ -4,6 +4,7 @@ import { Wallet } from "../model/Wallet.model.js";
 import { Transaction } from "../model/Transaction.model.js";
 import { User } from "../model/User.model.js";
 import { SafeHavenProvider } from "../providers/safeHeaven.provider.js";
+import { BankService } from "./bank.service.js";
 export class WalletService {
     static async createWallet(userId) {
         return Wallet.create({
@@ -67,7 +68,7 @@ export class WalletService {
         }
     }
     // Transfer method unchanged
-    static async transfer({ senderId, method, recipient, amount, bank, accountNumber, }) {
+    static async transfer({ senderId, method, recipient, amount, bankName, accountNumber, }) {
         if (amount <= 0)
             throw new ApiError(400, "Invalid amount");
         const session = await mongoose.startSession();
@@ -121,14 +122,14 @@ export class WalletService {
             }
             /** ================= BANK TRANSFER ================= */
             if (method === "bank") {
-                if (!bank || !accountNumber)
+                if (!bankName || !accountNumber)
                     throw new ApiError(400, "Bank and account number required");
                 const user = await User.findById(senderId);
                 if (!user || !user.safeHavenAccount?.accountNumber) {
                     throw new ApiError(404, "User bank account not found");
                 }
                 // Step 1: Name Enquiry
-                const nameEnquiryResponse = await SafeHavenProvider.nameEnquiry(bank, accountNumber);
+                const nameEnquiryResponse = await BankService.nameEnquiry({ bankName, accountNumber });
                 if (!nameEnquiryResponse?.sessionId)
                     throw new ApiError(400, "Name enquiry failed");
                 // Step 2: Debit funds
@@ -137,8 +138,8 @@ export class WalletService {
                 // Step 3: Initiate transfer
                 const transferResponse = await SafeHavenProvider.transfer({
                     nameEnquiryReference: nameEnquiryResponse.sessionId,
-                    debitAccountNumber: user.safeHavenAccount?.accountNumber, // Your SafeHaven subaccount
-                    beneficiaryBankCode: bank,
+                    debitAccountNumber: user.safeHavenAccount?.accountNumber,
+                    beneficiaryBankCode: nameEnquiryResponse.bankCode,
                     beneficiaryAccountNumber: accountNumber,
                     amount,
                     saveBeneficiary: false,
@@ -153,7 +154,7 @@ export class WalletService {
                         reference: transferResponse.paymentReference,
                         status: "pending",
                         source: "bank",
-                        details: { bank, accountNumber, beneficiaryName: nameEnquiryResponse.accountName }
+                        details: { bankName, accountNumber, beneficiaryName: nameEnquiryResponse.accountName }
                     }], { session });
                 await session.commitTransaction();
                 return {

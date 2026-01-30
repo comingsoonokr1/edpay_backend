@@ -5,6 +5,13 @@ import { SafeHavenProvider } from "../providers/safeHeaven.provider.js";
 import { ApiError } from "../shared/errors/api.error.js";
 import { comparePassword } from "../shared/helpers/password.helper.js";
 
+
+type AirtimeProvider = {
+  code: string;
+  name: string;
+  id: string;
+};
+
 export class AirtimeService {
   static async getProviders() {
     return [
@@ -15,12 +22,12 @@ export class AirtimeService {
     ];
   }
 
+
   static async purchaseAirtime(data: {
     userId: string;
     provider: string; // e.g., "MTN"
     phone: string;
     amount: number;
-    debitAccountNumber: string; // must supply
     transactionPin: string;
     statusUrl?: string;         // optional
   }) {
@@ -60,23 +67,28 @@ export class AirtimeService {
     });
 
     try {
-      // 1️⃣ Fetch provider category dynamically
-      const providers = await SafeHavenProvider.getAirtimeProviders();
+      //  Fetch provider category dynamically
+      const providers: AirtimeProvider[] = await SafeHavenProvider.getAirtimeProviders();
+
       const provider = providers.find(p => p.code === data.provider.toUpperCase());
       if (!provider) throw new ApiError(404, "Provider not found");
 
-      // 2️⃣ SafeHaven purchase
+      // SafeHaven purchase
       const response = await SafeHavenProvider.purchaseAirtime({
         phone: data.phone,
         amount: data.amount,
         serviceCategoryId: provider.id,
-        debitAccountNumber: data.debitAccountNumber,
+        debitAccountNumber: user.safeHavenAccount?.accountNumber || "",
         statusUrl: data.statusUrl,
         reference,
       });
 
+      if (Number(response.statusCode) !== 200) {
+        throw new ApiError(400, response.message || "Airtime purchase failed");
+      }
+
       transaction.status = "success";
-      transaction.meta = response;
+      transaction.meta = response.data;
       await transaction.save();
 
       return transaction;
@@ -88,11 +100,22 @@ export class AirtimeService {
       );
 
       transaction.status = "failed";
-      transaction.meta = { error: err };
+      transaction.meta = {
+        error:
+          err instanceof Error
+            ? err.message
+            : typeof err === "string"
+              ? err
+              : JSON.stringify(err),
+      };
+
       await transaction.save();
+      console.log(err);
 
       throw new ApiError(400, "Airtime purchase failed");
     }
+
+
   }
 
 

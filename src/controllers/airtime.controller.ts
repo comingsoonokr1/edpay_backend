@@ -26,7 +26,6 @@ export class AirtimeController {
       provider,
       phone,
       amount,
-      debitAccountNumber,
       transactionPin,
       statusUrl, // optional
     });

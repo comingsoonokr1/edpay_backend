@@ -38,12 +38,11 @@ export class DataController {
       bundleCode,
       phone,
       amount,
-      debitAccountNumber,
       transactionPin,
       statusUrl,
     } = req.body;
 
-    if (!serviceCategoryId || !bundleCode || !phone || !amount || !debitAccountNumber) {
+    if (!serviceCategoryId || !bundleCode || !phone || !amount) {
       throw new ApiError(400, "Missing required fields");
     }
 
@@ -53,7 +52,6 @@ export class DataController {
       bundleCode,
       phone,
       amount,
-      debitAccountNumber,
       transactionPin,
       statusUrl,
     });

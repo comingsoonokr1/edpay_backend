@@ -18,6 +18,8 @@ const router = Router();
 
 router.use(authMiddleware);
 
+router.get("/products/:serviceCategoryId", BillController.getProducts);
+
 /**
  * @swagger
  * /bills/providers:

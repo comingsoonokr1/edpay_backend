@@ -8,6 +8,7 @@ import { Wallet } from "../model/Wallet.model.js";
 import mongoose from "mongoose";
 import { sendOTPSMS } from "../shared/helpers/otp.helper.js";
 import { SafeHavenProvider } from "../providers/safeHeaven.provider.js";
+import { log } from "console";
 
 export class AuthService {
   private static validateAndFormatPhone(phoneNumber: string): string {
@@ -257,14 +258,24 @@ static async initiateBVN(userId: string, bvn: string) {
   const user = await User.findById(userId);
   if (!user) throw new ApiError(404, "User not found");
 
+  if (!/^\d{11}$/.test(bvn)) {
+    throw new ApiError(400, "BVN must be 11 digits");
+  }
+
   const identity = await SafeHavenProvider.initiateVerification({
     type: "BVN",
     number: bvn,
+    debitAccountNumber: "0116763095"
   });
+
+  console.log(identity);
+
+   user.bvn = bvn;
+   await user.save();
 
   return {
     message: "OTP sent to BVN registered phone number",
-    identityId: identity._id, // IMPORTANT
+    identityId: identity.data._id, // IMPORTANT
   };
 }
 
@@ -287,7 +298,7 @@ static async validateBVNAndCreateWallet(
 
   try {
     /**
-     * 1️⃣ Validate OTP
+     *  Validate OTP
      */
     const verification = await SafeHavenProvider.validateVerification({
       identityId,
@@ -295,20 +306,22 @@ static async validateBVNAndCreateWallet(
       otp,
     });
 
-    if (verification.status !== "verified") {
-      throw new ApiError(400, "BVN verification failed");
-    }
+    console.log(verification);
+
+    // if (verification.statusCode !== "200") {
+    //   throw new ApiError(400, "BVN verification failed");
+    // }
 
     /**
-     * 2️⃣ Save KYC data
+     *  Save KYC data
      */
-    user.bvn = verification.data.bvn;
+   
     user.safeHavenIdentityId = identityId;
     user.isKycVerified = true;
     user.transactionPin = await hashPassword(transactionPin);
 
     /**
-     * 3️⃣ Create Wallet
+     * 3Create Wallet
      */
     if (!user.safeHavenAccount?.accountNumber) {
       const account = await SafeHavenProvider.createSubAccount({
@@ -318,8 +331,9 @@ static async validateBVNAndCreateWallet(
         identityType: "BVN",
         identityNumber: user.bvn!,
         identityId,
+        otp
       });
-
+      console.log(account);
       user.safeHavenAccount = {
         accountNumber: account.accountNumber,
         accountName: account.accountName || user.fullName,

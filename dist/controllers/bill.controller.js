@@ -4,6 +4,11 @@ import { BillService } from "../services/bill.service.js";
 export class BillController {
 }
 _a = BillController;
+BillController.getProducts = asyncHandler(async (req, res) => {
+    const { serviceCategoryId } = req.params;
+    const products = await BillService.getProviderProducts(serviceCategoryId);
+    res.status(200).json({ success: true, data: products });
+});
 // Get providers
 BillController.getProviders = asyncHandler(async (req, res) => {
     const { category } = req.query;

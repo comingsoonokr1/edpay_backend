@@ -39,7 +39,7 @@ WalletController.withdraw = asyncHandler(async (req, res) => {
 });
 WalletController.transfer = asyncHandler(async (req, res) => {
     const senderId = req.user.userId;
-    const { method, recipient, amount, bank, accountNumber } = req.body;
+    const { method, recipient, amount, bankName, accountNumber } = req.body;
     if (!method || !recipient || !amount) {
         return res.status(400).json({
             success: false,
@@ -51,7 +51,7 @@ WalletController.transfer = asyncHandler(async (req, res) => {
         method,
         recipient,
         amount,
-        bank,
+        bankName,
         accountNumber,
     });
     res.status(200).json({

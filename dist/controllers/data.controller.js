@@ -31,8 +31,8 @@ DataController.purchaseData = asyncHandler(async (req, res) => {
     if (!userId) {
         throw new ApiError(401, "Unauthorized");
     }
-    const { serviceCategoryId, bundleCode, phone, amount, debitAccountNumber, transactionPin, statusUrl, } = req.body;
-    if (!serviceCategoryId || !bundleCode || !phone || !amount || !debitAccountNumber) {
+    const { serviceCategoryId, bundleCode, phone, amount, transactionPin, statusUrl, } = req.body;
+    if (!serviceCategoryId || !bundleCode || !phone || !amount) {
         throw new ApiError(400, "Missing required fields");
     }
     const transaction = await DataService.purchaseData({
@@ -41,7 +41,6 @@ DataController.purchaseData = asyncHandler(async (req, res) => {
         bundleCode,
         phone,
         amount,
-        debitAccountNumber,
         transactionPin,
         statusUrl,
     });

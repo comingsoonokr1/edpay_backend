@@ -23,7 +23,6 @@ AirtimeController.purchase = asyncHandler(async (req, res) => {
         provider,
         phone,
         amount,
-        debitAccountNumber,
         transactionPin,
         statusUrl, // optional
     });

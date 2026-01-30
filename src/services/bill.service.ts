@@ -6,8 +6,18 @@ import { User } from "../model/User.model.js";
 import { comparePassword } from "../shared/helpers/password.helper.js";
 
 export class BillService {
+
+  static async getProviderProducts(serviceCategoryId: string) {
+    if (!serviceCategoryId) {
+      throw new ApiError(400, "Service category ID is required");
+    }
+    const products = await SafeHavenProvider.getProviderProducts(serviceCategoryId);
+    console.log(products);
+    
+    return products;
+  }
   // Get providers (TV, Electricity, Education)
-  static async getProviders(category: "tv" | "electricity" | "education") {
+  static async getProviders(category: "tv" | "electricity") {
     // getVASProviders already returns array of providers
     const providers = await SafeHavenProvider.getVASProviders(category);
 
@@ -19,7 +29,7 @@ export class BillService {
     return providers.map((item: any) => ({
       serviceID: item.id, // note: id instead of serviceCategoryId
       name: item.name,
-      type: item.type || null,
+      type: item.code,
     }));
   }
 

@@ -44,22 +44,25 @@ export class AirtimeService {
             status: "pending",
         });
         try {
-            // 1️⃣ Fetch provider category dynamically
+            //  Fetch provider category dynamically
             const providers = await SafeHavenProvider.getAirtimeProviders();
             const provider = providers.find(p => p.code === data.provider.toUpperCase());
             if (!provider)
                 throw new ApiError(404, "Provider not found");
-            // 2️⃣ SafeHaven purchase
+            // SafeHaven purchase
             const response = await SafeHavenProvider.purchaseAirtime({
                 phone: data.phone,
                 amount: data.amount,
                 serviceCategoryId: provider.id,
-                debitAccountNumber: data.debitAccountNumber,
+                debitAccountNumber: user.safeHavenAccount?.accountNumber || "",
                 statusUrl: data.statusUrl,
                 reference,
             });
+            if (Number(response.statusCode) !== 200) {
+                throw new ApiError(400, response.message || "Airtime purchase failed");
+            }
             transaction.status = "success";
-            transaction.meta = response;
+            transaction.meta = response.data;
             await transaction.save();
             return transaction;
         }
@@ -67,8 +70,15 @@ export class AirtimeService {
             // Refund wallet on failure
             await Wallet.findOneAndUpdate({ userId: data.userId }, { $inc: { balance: data.amount } });
             transaction.status = "failed";
-            transaction.meta = { error: err };
+            transaction.meta = {
+                error: err instanceof Error
+                    ? err.message
+                    : typeof err === "string"
+                        ? err
+                        : JSON.stringify(err),
+            };
             await transaction.save();
+            console.log(err);
             throw new ApiError(400, "Airtime purchase failed");
         }
     }
