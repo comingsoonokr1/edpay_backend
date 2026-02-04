@@ -27,12 +27,6 @@ router.use("/checkout", checkoutRoutes);
 router.use("/webhook", webhookRoutes);
 
 
-// {
-//   "identityId": "69837c55dd8497589e5188d5",
-//   "otp": "340879",
-//   "transactionPin": "1234"
-// }
-
 
 
 

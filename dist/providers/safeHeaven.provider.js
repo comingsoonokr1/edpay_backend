@@ -105,8 +105,7 @@ export class SafeHavenProvider {
                     ClientID: CLIENT_ID,
                 },
             });
-            console.log("REsponse", response.data);
-            return response.data;
+            return response.data.data;
         }
         catch (err) {
             throw new ApiError(err.response?.status || 500, `Safe Haven sub-account creation failed: ${err.response?.data?.message ||

@@ -261,13 +261,12 @@ export class AuthService {
                     identityId,
                     otp
                 });
-                console.log(account);
                 user.safeHavenAccount = {
                     accountId: account._id,
                     accountNumber: account.accountNumber,
                     accountName: account.accountName || user.fullName,
                     bankCode: account.bankCode,
-                    accountReference: account.reference || account.id,
+                    accountReference: account.externalreference || account._id,
                     createdAt: new Date(),
                 };
             }
