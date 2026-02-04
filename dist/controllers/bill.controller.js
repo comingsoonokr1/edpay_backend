@@ -5,8 +5,8 @@ export class BillController {
 }
 _a = BillController;
 BillController.getProducts = asyncHandler(async (req, res) => {
-    const { serviceCategoryId } = req.params;
-    const products = await BillService.getProviderProducts(serviceCategoryId);
+    const { serviceID } = req.query;
+    const products = await BillService.getProviderProducts(serviceID);
     res.status(200).json({ success: true, data: products });
 });
 // Get providers

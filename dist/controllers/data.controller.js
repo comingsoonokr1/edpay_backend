@@ -15,11 +15,14 @@ DataController.getProviders = asyncHandler(async (req, res) => {
 });
 // GET /data/plans?serviceCategoryId=...
 DataController.getPlans = asyncHandler(async (req, res) => {
-    const { serviceCategoryId } = req.query;
-    if (!serviceCategoryId) {
-        throw new ApiError(400, "serviceCategoryId is required");
-    }
-    const plans = await DataService.getPlans(serviceCategoryId);
+    const { provider } = req.query;
+    const providerName = provider.toUpperCase();
+    const providers = await DataService.getProviders();
+    const selected = providers.find(p => p.name.toUpperCase().includes(providerName) ||
+        p.code.toUpperCase().includes(providerName));
+    if (!providerName)
+        throw new ApiError(400, "Provider required");
+    const plans = await DataService.getPlans(selected?.id);
     res.json({
         success: true,
         data: plans,
@@ -31,13 +34,21 @@ DataController.purchaseData = asyncHandler(async (req, res) => {
     if (!userId) {
         throw new ApiError(401, "Unauthorized");
     }
-    const { serviceCategoryId, bundleCode, phone, amount, transactionPin, statusUrl, } = req.body;
-    if (!serviceCategoryId || !bundleCode || !phone || !amount) {
+    const { provider, bundleCode, phone, transactionPin, statusUrl, amount } = req.body;
+    if (!provider)
+        throw new ApiError(400, "Provider required");
+    const providerName = provider.toUpperCase();
+    const providers = await DataService.getProviders();
+    const selected = providers.find(p => p.name.toUpperCase().includes(providerName) ||
+        p.code.toUpperCase().includes(providerName));
+    if (!selected)
+        throw new ApiError(400, "Invalid provider");
+    if (!bundleCode || !phone || !transactionPin) {
         throw new ApiError(400, "Missing required fields");
     }
     const transaction = await DataService.purchaseData({
         userId,
-        serviceCategoryId,
+        serviceCategoryId: selected.id,
         bundleCode,
         phone,
         amount,

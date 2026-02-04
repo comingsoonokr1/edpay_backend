@@ -5,6 +5,7 @@ import { Transaction } from "../model/Transaction.model.js";
 import { User } from "../model/User.model.js";
 import { SafeHavenProvider } from "../providers/safeHeaven.provider.js";
 import { BankService } from "./bank.service.js";
+import { comparePassword } from "../shared/helpers/password.helper.js";
 export class WalletService {
     static async createWallet(userId) {
         return Wallet.create({
@@ -68,7 +69,7 @@ export class WalletService {
         }
     }
     // Transfer method unchanged
-    static async transfer({ senderId, method, recipient, amount, bankName, accountNumber, }) {
+    static async transfer({ senderId, method, recipient, amount, bankName, accountNumber, transactionPin, note }) {
         if (amount <= 0)
             throw new ApiError(400, "Invalid amount");
         const session = await mongoose.startSession();
@@ -78,6 +79,15 @@ export class WalletService {
             const senderWallet = await Wallet.findOne({ userId: senderId }).session(session);
             if (!senderWallet)
                 throw new ApiError(404, "Sender wallet not found");
+            // Verify user's transaction PIN
+            const user = await User.findById(senderId);
+            if (!user)
+                throw new ApiError(404, "User not found");
+            if (!user.transactionPin)
+                throw new ApiError(403, "Transaction PIN not set");
+            const isPinValid = await comparePassword(transactionPin, user.transactionPin);
+            if (!isPinValid)
+                throw new ApiError(401, "Invalid transaction PIN");
             const availableBalance = senderWallet.balance - (senderWallet.reservedBalance || 0);
             if (availableBalance < amount)
                 throw new ApiError(403, "Insufficient balance");
@@ -102,7 +112,10 @@ export class WalletService {
                         reference,
                         status: "success",
                         source: "wallet",
-                        details: { to: recipient },
+                        details: {
+                            to: recipient,
+                            ...(note ? { note } : {}), // note only if provided
+                        },
                     },
                     {
                         userId: receiverWallet.userId,
@@ -111,7 +124,10 @@ export class WalletService {
                         reference,
                         status: "success",
                         source: "wallet",
-                        details: { from: senderId },
+                        details: {
+                            from: senderId,
+                            ...(note ? { note } : {}), // note only if provided
+                        },
                     },
                 ], { session });
                 await session.commitTransaction();

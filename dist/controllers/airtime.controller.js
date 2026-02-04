@@ -14,9 +14,9 @@ AirtimeController.getProviders = asyncHandler(async (_req, res) => {
 });
 AirtimeController.purchase = asyncHandler(async (req, res) => {
     const userId = req.user.userId;
-    const { provider, phone, amount, debitAccountNumber, statusUrl, transactionPin } = req.body;
-    if (!debitAccountNumber) {
-        throw new ApiError(400, "debitAccountNumber is required");
+    const { provider, phone, amount, statusUrl, transactionPin } = req.body;
+    if (!transactionPin) {
+        throw new ApiError(400, "transactionPin is required");
     }
     const transaction = await AirtimeService.purchaseAirtime({
         userId,

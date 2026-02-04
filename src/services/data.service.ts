@@ -59,12 +59,12 @@ export class DataService {
     }
 
     // Verify user's transaction PIN
-        const user = await User.findById(data.userId);
-        if (!user) throw new ApiError(404, "User not found");
-        if (!user.transactionPin) throw new ApiError(403, "Transaction PIN not set");
-    
-        const isPinValid = await comparePassword(data.transactionPin, user.transactionPin);
-        if (!isPinValid) throw new ApiError(401, "Invalid transaction PIN");
+    const user = await User.findById(data.userId);
+    if (!user) throw new ApiError(404, "User not found");
+    if (!user.transactionPin) throw new ApiError(403, "Transaction PIN not set");
+
+    const isPinValid = await comparePassword(data.transactionPin, user.transactionPin);
+    if (!isPinValid) throw new ApiError(401, "Invalid transaction PIN");
 
     // Debit wallet atomically
     const wallet = await Wallet.findOneAndUpdate(

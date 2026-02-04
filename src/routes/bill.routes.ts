@@ -16,9 +16,8 @@ const router = Router();
  *   description: Bill payments and bill management
  */
 
-router.use(authMiddleware);
 
-router.get("/products/:serviceCategoryId", BillController.getProducts);
+router.get("/products", BillController.getProducts);
 
 /**
  * @swagger

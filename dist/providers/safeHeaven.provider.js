@@ -181,7 +181,7 @@ export class SafeHavenProvider {
     }
     static async getDataProviders() {
         const api = await this.getAuthorizedInstance();
-        // 1️⃣ Get all services
+        //  Get all services
         const servicesRes = await api.get("/vas/services", {
             headers: {
                 ClientID: CLIENT_ID, // Add this metadata
@@ -191,7 +191,7 @@ export class SafeHavenProvider {
         const dataService = servicesRes.data.data.find((s) => s.identifier.toLowerCase() === "data");
         if (!dataService)
             throw new ApiError(404, "Data service not found");
-        // 2️⃣ Get categories for the Data service
+        //  Get categories for the Data service
         const categoriesRes = await api.get(`/vas/service/${dataService._id}/service-categories`, {
             headers: {
                 ClientID: CLIENT_ID,

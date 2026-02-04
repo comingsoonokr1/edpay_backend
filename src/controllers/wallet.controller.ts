@@ -47,7 +47,7 @@ export class WalletController {
 
   static transfer = asyncHandler(async (req: Request, res: Response) => {
     const senderId = req.user!.userId;
-    const { method, recipient, amount, bankName, accountNumber } = req.body;
+    const { method, recipient, amount, bankName, accountNumber, transactionPin, note} = req.body;
 
     if (!method || !recipient || !amount) {
       return res.status(400).json({
@@ -63,6 +63,8 @@ export class WalletController {
       amount,
       bankName,
       accountNumber,
+      transactionPin,
+      note
     });
 
     res.status(200).json({
