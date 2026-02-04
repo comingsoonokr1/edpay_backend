@@ -1,64 +1,64 @@
 import express from "express";
-import crypto from "crypto";
-import { Transaction } from "../model/Transaction.model.js";
 import { Wallet } from "../model/Wallet.model.js";
+import { Transaction } from "../model/Transaction.model.js";
+import mongoose from "mongoose";
 const router = express.Router();
-/**
- * Paystack Webhook (SECURED)
- */
-router.post("/paystack", express.raw({ type: "application/json" }), async (req, res) => {
+router.post("/safehaven", async (req, res) => {
+    const session = await mongoose.startSession();
+    session.startTransaction();
     try {
-        const signature = req.headers["x-paystack-signature"];
-        // Verify Paystack signature
-        const hash = crypto
-            .createHmac("sha512", process.env.PAYSTACK_SECRET_KEY)
-            .update(req.body)
-            .digest("hex");
-        if (hash !== signature) {
-            return res.sendStatus(401); // Unauthorized
+        const payload = req.body;
+        // Example: extract transfer paymentReference and status
+        // Adjust according to SafeHaven webhook payload docs
+        const paymentReference = payload.paymentReference || payload.reference;
+        const status = (payload.status || "").toLowerCase();
+        if (!paymentReference || !status) {
+            return res.status(400).json({ error: "Missing paymentReference or status" });
         }
-        // Parse event AFTER verification
-        const event = JSON.parse(req.body.toString());
-        /** Transfer Successful */
-        if (event.event === "transfer.success") {
-            const ref = event.data.transfer_code;
-            const tx = await Transaction.findOne({ reference: ref });
-            if (!tx)
-                return res.sendStatus(200);
-            if (tx.status === "success")
-                return res.sendStatus(200); // Idempotency guard
-            const wallet = await Wallet.findOne({ userId: tx.userId });
-            if (!wallet)
-                return res.sendStatus(200);
-            // Release reserved funds and debit actual balance
-            wallet.reservedBalance = Math.max(0, (wallet.reservedBalance || 0) - tx.amount);
-            wallet.balance -= tx.amount;
-            await wallet.save();
-            tx.status = "success";
-            await tx.save();
+        // Find the transaction that matches this paymentReference and is pending
+        const transaction = await Transaction.findOne({
+            reference: paymentReference,
+            status: "pending",
+        }).session(session);
+        if (!transaction) {
+            // If no pending transaction found, maybe it’s already handled, just acknowledge
+            await session.commitTransaction();
+            return res.status(200).json({ message: "Transaction not found or already processed" });
         }
-        /** Transfer Failed */
-        if (event.event === "transfer.failed") {
-            const ref = event.data.transfer_code;
-            const tx = await Transaction.findOne({ reference: ref });
-            if (!tx)
-                return res.sendStatus(200);
-            if (tx.status === "failed")
-                return res.sendStatus(200); // Idempotency guard
-            const wallet = await Wallet.findOne({ userId: tx.userId });
-            if (wallet) {
-                // Release reserved funds ONLY
-                wallet.reservedBalance = Math.max(0, (wallet.reservedBalance || 0) - tx.amount);
-                await wallet.save();
-            }
-            tx.status = "failed";
-            await tx.save();
+        // Fetch wallet for transaction user
+        const wallet = await Wallet.findOne({ userId: transaction.userId }).session(session);
+        if (!wallet) {
+            await session.abortTransaction();
+            return res.status(404).json({ error: "Wallet not found" });
         }
-        return res.sendStatus(200);
+        if (status === "success") {
+            // Funds reserved earlier should now be deducted permanently
+            wallet.reservedBalance -= transaction.amount;
+            wallet.balance -= transaction.amount;
+            transaction.status = "success";
+        }
+        else if (status === "failed" || status === "cancelled") {
+            // Release reserved funds since transfer failed
+            wallet.reservedBalance -= transaction.amount;
+            transaction.status = "failed";
+        }
+        else {
+            // Other statuses (queued, pending) - do nothing or log
+            await session.commitTransaction();
+            return res.status(200).json({ message: "Status pending or queued, no action taken" });
+        }
+        await wallet.save({ session });
+        await transaction.save({ session });
+        await session.commitTransaction();
+        return res.status(200).json({ message: "Transaction updated successfully" });
     }
     catch (error) {
-        console.error("Paystack Webhook Error:", error);
-        return res.sendStatus(500);
+        await session.abortTransaction();
+        console.error("Webhook processing error:", error);
+        return res.status(500).json({ error: "Internal server error" });
+    }
+    finally {
+        session.endSession();
     }
 });
 export default router;
