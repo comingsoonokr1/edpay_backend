@@ -171,7 +171,7 @@ export class SafeHavenProvider {
     //  verify  checkout provider
     static async verifyCheckout(reference) {
         const api = await this.getAuthorizedInstance();
-        const response = await api.get(`/checkout/verify/${reference}`, {
+        const response = await api.get(`/checkout/${reference}/verify`, {
             headers: {
                 ClientID: CLIENT_ID,
             },

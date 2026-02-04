@@ -24,11 +24,12 @@ export class CheckoutService {
         throw new ApiError(400, "Invalid verification response");
       }
 
-      const payment = verification.data;
-
-      if (payment.status !== "success") {
+       if (verification.statusCode !== 200) {
         throw new ApiError(400, "Payment not successful");
       }
+
+      const payment = verification.data;
+
 
       const amount = Number(payment.amount);
       if (amount <= 0) {

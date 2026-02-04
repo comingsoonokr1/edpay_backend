@@ -10,6 +10,7 @@ const router = Router();
  *   name: Wallet
  *   description: Wallet balance, funding, withdrawal, and transfers
  */
+router.get("/account/:accountId", WalletController.getAccount);
 router.use(authMiddleware);
 /**
  * Get wallet balance

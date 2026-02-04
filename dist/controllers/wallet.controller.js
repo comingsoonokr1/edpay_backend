@@ -1,9 +1,24 @@
 var _a;
 import { WalletService } from "../services/wallet.service.js";
 import { asyncHandler } from "../shared/utils/asyncHandler.js";
+import { SafeHavenProvider } from "../providers/safeHeaven.provider.js";
 export class WalletController {
 }
 _a = WalletController;
+WalletController.getAccount = asyncHandler(async (req, res) => {
+    const { accountId } = req.params;
+    if (!accountId) {
+        throw new Error("accountId needed");
+    }
+    const account = await SafeHavenProvider.getAccount(accountId);
+    console.log(account);
+    res.status(200).json({
+        success: true,
+        data: {
+            account
+        }
+    });
+});
 WalletController.getBalance = asyncHandler(async (req, res) => {
     const userId = req.user.userId;
     const balance = await WalletService.getBalance(userId);

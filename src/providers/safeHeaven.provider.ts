@@ -264,7 +264,7 @@ export class SafeHavenProvider {
     static async verifyCheckout(reference: string) {
         const api = await this.getAuthorizedInstance();
 
-        const response = await api.get(`/checkout/verify/${reference}`, {
+        const response = await api.get(`/checkout/${reference}/verify`, {
             headers: {
                 ClientID: CLIENT_ID,
             },

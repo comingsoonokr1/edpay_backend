@@ -1,8 +1,27 @@
 import { Request, Response } from "express";
 import { WalletService } from "../services/wallet.service.js";
 import { asyncHandler } from "../shared/utils/asyncHandler.js";
+import { SafeHavenProvider } from "../providers/safeHeaven.provider.js";
 
 export class WalletController {
+
+  static getAccount = asyncHandler( async(req: Request, res:Response) => {
+    const { accountId } = req.params  as {accountId: string};
+    if(!accountId) {
+      throw new Error("accountId needed");
+    }
+    const account = await SafeHavenProvider.getAccount(accountId);
+
+    console.log(account);
+    
+
+    res.status(200).json({
+      success: true,
+      data: {
+        account
+      }
+    })
+  })
 
   static getBalance = asyncHandler(async (req: Request, res: Response) => {
     const userId = req.user!.userId;

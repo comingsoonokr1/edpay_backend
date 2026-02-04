@@ -146,7 +146,7 @@ export class WalletService {
             const resolved = await resolveRecipient(recipient);
             const isInternal = resolved.isInternal;
             const effectiveBankName = isInternal
-                ? "SAFEHAVEN"
+                ? "Safe Haven Microfinance Bank"
                 : bankName;
             /** ================= NAME ENQUIRY ================= */
             const nameEnquiry = await BankService.nameEnquiry({
