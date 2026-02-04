@@ -428,7 +428,7 @@ export class SafeHavenProvider {
         try {
             const response = await api.post("/identity/v2", {
                 ...payload,
-                async: payload.async ?? true,
+                async: payload.async ?? false,
             }, {
                 headers: {
                     ClientID: CLIENT_ID,

@@ -239,7 +239,7 @@ export class AuthService {
                 otp,
             });
             console.log(verification);
-            if (verification.statusCode !== "200") {
+            if (verification.statusCode !== "200" && verification.message !== "OTP already verified.") {
                 throw new ApiError(400, "BVN verification failed");
             }
             /**

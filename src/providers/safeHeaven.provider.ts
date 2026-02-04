@@ -637,7 +637,7 @@ export class SafeHavenProvider {
                 "/identity/v2",
                 {
                     ...payload,
-                    async: payload.async ?? true,
+                    async: payload.async ?? false,
                 },
                 {
                     headers: {
