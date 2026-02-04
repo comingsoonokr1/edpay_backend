@@ -59,7 +59,7 @@ export class DataService {
     }
 
     // Verify user's transaction PIN
-    const user = await User.findById(data.userId);
+    const user = await User.findById(data.userId).select("+transactionPin");
     if (!user) throw new ApiError(404, "User not found");
     if (!user.transactionPin) throw new ApiError(403, "Transaction PIN not set");
 

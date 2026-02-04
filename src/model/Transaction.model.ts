@@ -35,6 +35,10 @@ const TransactionSchema = new Schema({
         enum: ["wallet", "bank", "card", "airtime", "bills", "checkout"],
         required: true
     },
+    isInternal: {
+        type: Boolean,
+        default: false
+    },
     details: { type: mongoose.Schema.Types.Mixed },
 
     channel: {

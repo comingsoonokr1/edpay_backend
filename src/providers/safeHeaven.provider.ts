@@ -510,7 +510,7 @@ export class SafeHavenProvider {
             );
             const categories = categoriesRes.data.data;
             console.log(categories);
-            
+
 
             const providers = categories.map((cat: any) => ({
                 id: cat._id,
@@ -543,7 +543,7 @@ export class SafeHavenProvider {
             const products = res.data.data;
 
             console.log(products);
-            
+
 
             if (!products.length) {
                 throw new ApiError(404, "No products found for this provider");
@@ -687,5 +687,17 @@ export class SafeHavenProvider {
             );
         }
     }
+
+    // get account
+    static async getAccount(accountId: string) {
+        const api = await this.getAuthorizedInstance();
+        const response = await api.get(`/accounts/${accountId}`, {
+            headers: {
+                ClientID: CLIENT_ID,
+            },
+        });
+        return response.data.data;
+    }
+
 
 }

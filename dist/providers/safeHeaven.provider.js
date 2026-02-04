@@ -458,6 +458,16 @@ export class SafeHavenProvider {
             throw new ApiError(err.response?.status || 500, `SafeHaven identity validation failed: ${err.response?.data?.message || err.message}`);
         }
     }
+    // get account
+    static async getAccount(accountId) {
+        const api = await this.getAuthorizedInstance();
+        const response = await api.get(`/accounts/${accountId}`, {
+            headers: {
+                ClientID: CLIENT_ID,
+            },
+        });
+        return response.data.data;
+    }
 }
 SafeHavenProvider.axiosInstance = null;
 SafeHavenProvider.tokenExpiry = 0;

@@ -239,9 +239,9 @@ export class AuthService {
                 otp,
             });
             console.log(verification);
-            // if (verification.statusCode !== "200") {
-            //   throw new ApiError(400, "BVN verification failed");
-            // }
+            if (verification.statusCode !== "200") {
+                throw new ApiError(400, "BVN verification failed");
+            }
             /**
              *  Save KYC data
              */
@@ -263,6 +263,7 @@ export class AuthService {
                 });
                 console.log(account);
                 user.safeHavenAccount = {
+                    accountId: account._id,
                     accountNumber: account.accountNumber,
                     accountName: account.accountName || user.fullName,
                     bankCode: account.bankCode,

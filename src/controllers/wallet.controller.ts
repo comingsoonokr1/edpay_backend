@@ -62,7 +62,6 @@ export class WalletController {
       recipient,
       amount,
       bankName,
-      accountNumber,
       transactionPin,
       note
     });
@@ -72,7 +71,7 @@ export class WalletController {
       message: result.message,
       data: {
         balance: result.balance,
-        transferReference: result.transferReference,
+        transferReference: result.reference,
       },
     });
   });

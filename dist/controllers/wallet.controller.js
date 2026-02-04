@@ -52,7 +52,6 @@ WalletController.transfer = asyncHandler(async (req, res) => {
         recipient,
         amount,
         bankName,
-        accountNumber,
         transactionPin,
         note
     });
@@ -61,7 +60,7 @@ WalletController.transfer = asyncHandler(async (req, res) => {
         message: result.message,
         data: {
             balance: result.balance,
-            transferReference: result.transferReference,
+            transferReference: result.reference,
         },
     });
 });

@@ -26,7 +26,7 @@ const UserSchema = new Schema(
         password: {
             type: String,
             required: true,
-           
+
         },
 
         role: {
@@ -84,6 +84,7 @@ const UserSchema = new Schema(
 
         transactionPin: {
             type: String,
+            select: false
         },
 
         isKycVerified: {
@@ -94,6 +95,7 @@ const UserSchema = new Schema(
         safeHavenIdentityId: { type: String },
 
         safeHavenAccount: {
+            accountId: { type: String },
             accountNumber: { type: String },
             accountName: { type: String },
             bankCode: { type: String },
@@ -103,6 +105,13 @@ const UserSchema = new Schema(
     },
     { timestamps: true }
 );
+
+UserSchema.index(
+    { "safeHavenAccount.accountNumber": 1 },
+    { unique: true, sparse: true }
+);
+
+
 
 /**
  * Strongly typed User document

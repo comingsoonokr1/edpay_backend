@@ -22,7 +22,7 @@ export class AirtimeService {
         if (existing)
             throw new ApiError(409, "Duplicate transaction");
         // Verify user's transaction PIN
-        const user = await User.findById(data.userId);
+        const user = await User.findById(data.userId).select("+transactionPin");
         if (!user)
             throw new ApiError(404, "User not found");
         if (!user.transactionPin)

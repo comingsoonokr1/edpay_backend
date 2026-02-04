@@ -6,19 +6,66 @@ import { User } from "../model/User.model.js";
 import { SafeHavenProvider } from "../providers/safeHeaven.provider.js";
 import { BankService } from "./bank.service.js";
 import { comparePassword } from "../shared/helpers/password.helper.js";
-export class WalletService {
-    static async createWallet(userId) {
-        return Wallet.create({
-            userId,
-            balance: 0,
-            reservedBalance: 0,
-            currency: "NGN",
-        });
+function getRecipientType(value) {
+    if (value.includes("@"))
+        return "EMAIL";
+    if (/^\d+$/.test(value))
+        return "ACCOUNT";
+    throw new Error("Invalid recipient");
+}
+async function resolveRecipient(recipient) {
+    const type = getRecipientType(recipient);
+    /** ================= EMAIL ================= */
+    if (type === "EMAIL") {
+        const user = await User.findOne({ email: recipient });
+        if (!user)
+            throw new ApiError(404, "Recipient not found");
+        if (!user.safeHavenAccount?.accountNumber) {
+            throw new ApiError(404, "Recipient has no SafeHaven account");
+        }
+        return {
+            accountNumber: user.safeHavenAccount.accountNumber,
+            bankCode: user.safeHavenAccount.bankCode,
+            userId: user._id.toString(),
+            isInternal: true,
+        };
     }
+    /** ================= ACCOUNT NUMBER ================= */
+    // Try resolving as internal SafeHaven account
+    const internalUser = await User.findOne({
+        "safeHavenAccount.accountNumber": recipient,
+    });
+    if (internalUser) {
+        return {
+            accountNumber: internalUser.safeHavenAccount?.accountNumber,
+            bankCode: internalUser.safeHavenAccount?.bankCode,
+            userId: internalUser._id.toString(),
+            isInternal: true,
+        };
+    }
+    // Otherwise external bank account
+    return {
+        accountNumber: recipient,
+        bankCode: null,
+        userId: null,
+        isInternal: false,
+    };
+}
+export class WalletService {
     static async getBalance(userId) {
         const wallet = await Wallet.findOne({ userId });
         if (!wallet)
             throw new ApiError(404, "Wallet not found");
+        // Find the user to get their SafeHaven account number
+        const user = await User.findById(userId);
+        if (!user || !user.safeHavenAccount?.accountId) {
+            throw new ApiError(404, "User or SafeHaven account not found");
+        }
+        // Fetch latest account info from SafeHaven API
+        const accountData = await SafeHavenProvider.getAccount(user.safeHavenAccount.accountId);
+        // Update wallet balance with latest from SafeHaven
+        wallet.balance = accountData.accountBalance;
+        await wallet.save();
         return wallet.balance;
     }
     static async getTransactions(userId) {
@@ -69,117 +116,87 @@ export class WalletService {
         }
     }
     // Transfer method unchanged
-    static async transfer({ senderId, method, recipient, amount, bankName, accountNumber, transactionPin, note }) {
+    static async transfer({ senderId, recipient, amount, bankName, transactionPin, note, }) {
         if (amount <= 0)
             throw new ApiError(400, "Invalid amount");
+        if (!recipient)
+            throw new ApiError(400, "Recipient required");
         const session = await mongoose.startSession();
         session.startTransaction();
         try {
-            /** Sender Wallet */
+            /** ================= SENDER ================= */
+            const sender = await User.findById(senderId).select("+transactionPin").session(session);
+            if (!sender)
+                throw new ApiError(404, "User not found");
+            if (!sender.transactionPin)
+                throw new ApiError(403, "Transaction PIN not set");
+            const isPinValid = await comparePassword(transactionPin, sender.transactionPin);
+            if (!isPinValid)
+                throw new ApiError(401, "Invalid transaction PIN");
+            if (!sender.safeHavenAccount?.accountNumber)
+                throw new ApiError(404, "Sender SafeHaven account not found");
+            /** ================= WALLET ================= */
             const senderWallet = await Wallet.findOne({ userId: senderId }).session(session);
             if (!senderWallet)
                 throw new ApiError(404, "Sender wallet not found");
-            // Verify user's transaction PIN
-            const user = await User.findById(senderId);
-            if (!user)
-                throw new ApiError(404, "User not found");
-            if (!user.transactionPin)
-                throw new ApiError(403, "Transaction PIN not set");
-            const isPinValid = await comparePassword(transactionPin, user.transactionPin);
-            if (!isPinValid)
-                throw new ApiError(401, "Invalid transaction PIN");
             const availableBalance = senderWallet.balance - (senderWallet.reservedBalance || 0);
             if (availableBalance < amount)
                 throw new ApiError(403, "Insufficient balance");
-            /** ================= INTERNAL TRANSFER ================= */
-            if (method === "user") {
-                const user = await User.findOne({ phoneNumber: recipient }).session(session);
-                if (!user)
-                    throw new ApiError(404, "Recipient not found");
-                const receiverWallet = await Wallet.findOne({ userId: user._id }).session(session);
-                if (!receiverWallet)
-                    throw new ApiError(404, "Recipient wallet not found");
-                senderWallet.balance -= amount;
-                receiverWallet.balance += amount;
-                await senderWallet.save({ session });
-                await receiverWallet.save({ session });
-                const reference = `TRF_${Date.now()}`;
-                await Transaction.create([
-                    {
-                        userId: senderId,
-                        type: "debit",
-                        amount,
-                        reference,
-                        status: "success",
-                        source: "wallet",
-                        details: {
-                            to: recipient,
-                            ...(note ? { note } : {}), // note only if provided
-                        },
-                    },
-                    {
-                        userId: receiverWallet.userId,
-                        type: "credit",
-                        amount,
-                        reference,
-                        status: "success",
-                        source: "wallet",
-                        details: {
-                            from: senderId,
-                            ...(note ? { note } : {}), // note only if provided
-                        },
-                    },
-                ], { session });
-                await session.commitTransaction();
-                return {
-                    message: "Transfer successful",
-                    balance: senderWallet.balance,
-                };
-            }
-            /** ================= BANK TRANSFER ================= */
-            if (method === "bank") {
-                if (!bankName || !accountNumber)
-                    throw new ApiError(400, "Bank and account number required");
-                const user = await User.findById(senderId);
-                if (!user || !user.safeHavenAccount?.accountNumber) {
-                    throw new ApiError(404, "User bank account not found");
-                }
-                // Step 1: Name Enquiry
-                const nameEnquiryResponse = await BankService.nameEnquiry({ bankName, accountNumber });
-                if (!nameEnquiryResponse?.sessionId)
-                    throw new ApiError(400, "Name enquiry failed");
-                // Step 2: Debit funds
-                senderWallet.reservedBalance += amount;
-                await senderWallet.save({ session });
-                // Step 3: Initiate transfer
-                const transferResponse = await SafeHavenProvider.transfer({
-                    nameEnquiryReference: nameEnquiryResponse.sessionId,
-                    debitAccountNumber: user.safeHavenAccount?.accountNumber,
-                    beneficiaryBankCode: nameEnquiryResponse.bankCode,
-                    beneficiaryAccountNumber: accountNumber,
+            /** ================= RESOLVE RECIPIENT ================= */
+            const resolved = await resolveRecipient(recipient);
+            const isInternal = resolved.isInternal;
+            const effectiveBankName = isInternal
+                ? "SAFEHAVEN"
+                : bankName;
+            /** ================= NAME ENQUIRY ================= */
+            const nameEnquiry = await BankService.nameEnquiry({
+                bankName: effectiveBankName,
+                accountNumber: resolved.accountNumber,
+            });
+            const effectiveBankCode = isInternal
+                ? resolved.bankCode
+                : nameEnquiry.bankCode;
+            if (!nameEnquiry?.sessionId)
+                throw new ApiError(400, "Name enquiry failed");
+            /** ================= RESERVE FUNDS ================= */
+            senderWallet.reservedBalance += amount;
+            await senderWallet.save({ session });
+            /** ================= SAFEHAVEN TRANSFER ================= */
+            const paymentReference = `TRF_${Date.now()}`;
+            const transferResponse = await SafeHavenProvider.transfer({
+                nameEnquiryReference: nameEnquiry.sessionId,
+                debitAccountNumber: sender.safeHavenAccount.accountNumber,
+                beneficiaryBankCode: effectiveBankCode,
+                beneficiaryAccountNumber: resolved.accountNumber,
+                amount,
+                narration: note || "Wallet Transfer",
+                saveBeneficiary: false,
+                paymentReference,
+            });
+            /** ================= TRANSACTION ================= */
+            await Transaction.create([
+                {
+                    userId: senderId,
+                    type: "debit",
                     amount,
-                    saveBeneficiary: false,
-                    narration: `Wallet Transfer to ${accountNumber}`,
-                    paymentReference: `TRF_${Date.now()}`,
-                });
-                // Save transaction
-                await Transaction.create([{
-                        userId: senderId,
-                        type: "debit",
-                        amount,
-                        reference: transferResponse.paymentReference,
-                        status: "pending",
-                        source: "bank",
-                        details: { bankName, accountNumber, beneficiaryName: nameEnquiryResponse.accountName }
-                    }], { session });
-                await session.commitTransaction();
-                return {
-                    message: "Bank transfer initiated",
-                    transferReference: transferResponse.paymentReference,
-                    balance: senderWallet.balance - senderWallet.reservedBalance,
-                };
-            }
-            throw new ApiError(400, "Invalid transfer method");
+                    reference: transferResponse.paymentReference,
+                    status: "pending",
+                    source: "wallet",
+                    isInternal: resolved.isInternal,
+                    details: {
+                        beneficiaryName: nameEnquiry.accountName,
+                        beneficiaryAccountNumber: resolved.accountNumber,
+                        ...(resolved.userId ? { beneficiaryUserId: resolved.userId } : {}),
+                        ...(note ? { note } : {}),
+                    },
+                },
+            ], { session });
+            await session.commitTransaction();
+            return {
+                message: "Transfer initiated",
+                reference: transferResponse.paymentReference,
+                balance: senderWallet.balance - senderWallet.reservedBalance,
+            };
         }
         catch (err) {
             await session.abortTransaction();

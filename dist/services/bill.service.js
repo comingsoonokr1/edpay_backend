@@ -30,7 +30,7 @@ export class BillService {
     // Pay a bill
     static async payBill(data) {
         // Verify user's transaction PIN
-        const user = await User.findById(data.userId);
+        const user = await User.findById(data.userId).select("+transactionPin");
         if (!user)
             throw new ApiError(404, "User not found");
         if (!user.transactionPin)
