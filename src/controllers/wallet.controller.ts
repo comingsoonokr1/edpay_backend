@@ -3,6 +3,7 @@ import { WalletService } from "../services/wallet.service.js";
 import { asyncHandler } from "../shared/utils/asyncHandler.js";
 
 export class WalletController {
+
   static getBalance = asyncHandler(async (req: Request, res: Response) => {
     const userId = req.user!.userId;
     const balance = await WalletService.getBalance(userId);

@@ -60,7 +60,6 @@ async function resolveRecipient(recipient: string) {
 }
 
 
-
 export class WalletService {
   static async getBalance(userId: string) {
     const wallet = await Wallet.findOne({ userId });
@@ -73,6 +72,7 @@ export class WalletService {
 
     // Fetch latest account info from SafeHaven API
     const accountData = await SafeHavenProvider.getAccount(user.safeHavenAccount.accountId);
+    
 
     // Update wallet balance with latest from SafeHaven
     wallet.balance = accountData.accountBalance;
