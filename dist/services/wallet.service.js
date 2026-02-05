@@ -136,12 +136,9 @@ export class WalletService {
             if (!sender.safeHavenAccount?.accountNumber)
                 throw new ApiError(404, "Sender SafeHaven account not found");
             /** ================= WALLET ================= */
-            const senderWallet = await Wallet.findOne({ userId: senderId }).session(session);
+            const senderWallet = await Wallet.findOneAndUpdate({ userId: senderId, balance: { $gte: amount } }, { $inc: { balance: -amount } }, { new: true, session });
             if (!senderWallet)
-                throw new ApiError(404, "Sender wallet not found");
-            const availableBalance = senderWallet.balance - (senderWallet.reservedBalance || 0);
-            if (availableBalance < amount)
-                throw new ApiError(403, "Insufficient balance");
+                throw new ApiError(403, "Insufficient wallet balance");
             /** ================= RESOLVE RECIPIENT ================= */
             const resolved = await resolveRecipient(recipient);
             const isInternal = resolved.isInternal;
@@ -215,7 +212,7 @@ export class WalletService {
             const transaction = await Transaction.findOne({
                 reference: paymentReference,
                 status: "pending",
-                source: "bank"
+                source: "wallet"
             }).session(session);
             if (!transaction)
                 throw new ApiError(404, "Pending transaction not found");

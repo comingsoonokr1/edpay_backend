@@ -181,14 +181,15 @@ export class WalletService {
         throw new ApiError(404, "Sender SafeHaven account not found");
 
       /** ================= WALLET ================= */
-      const senderWallet = await Wallet.findOne({ userId: senderId }).session(session);
-      if (!senderWallet) throw new ApiError(404, "Sender wallet not found");
 
-      const availableBalance =
-        senderWallet.balance - (senderWallet.reservedBalance || 0);
+      const senderWallet = await Wallet.findOneAndUpdate(
+        { userId: senderId, balance: { $gte: amount } },
+        { $inc: { balance: -amount } },
+        { new: true, session }
+      );
 
-      if (availableBalance < amount)
-        throw new ApiError(403, "Insufficient balance");
+      if (!senderWallet)
+        throw new ApiError(403, "Insufficient wallet balance");
 
       /** ================= RESOLVE RECIPIENT ================= */
       const resolved = await resolveRecipient(recipient);
@@ -226,7 +227,7 @@ export class WalletService {
           {
             userId: senderId,
             type: "debit",
-            wallet:  senderWallet._id,
+            wallet: senderWallet._id,
             amount,
             reference: paymentReference,
             status: "pending",
@@ -254,7 +255,7 @@ export class WalletService {
         paymentReference,
       });
 
-      
+
       await session.commitTransaction();
 
       return {
@@ -282,7 +283,7 @@ export class WalletService {
       const transaction = await Transaction.findOne({
         reference: paymentReference,
         status: "pending",
-        source: "bank"
+        source: "wallet"
       }).session(session);
 
       if (!transaction) throw new ApiError(404, "Pending transaction not found");
@@ -291,7 +292,7 @@ export class WalletService {
       if (!wallet) throw new ApiError(404, "Wallet not found");
 
       // Call Safe Haven to get status
-      const statusResponse = await SafeHavenProvider.transferStatus( paymentReference);
+      const statusResponse = await SafeHavenProvider.transferStatus(paymentReference);
 
       // Example structure returned by SafeHaven:
       // statusResponse.data.status === "success" | "failed" | "queued"
