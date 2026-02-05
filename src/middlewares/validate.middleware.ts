@@ -13,6 +13,7 @@ export const validate =
       });
       next();
     } catch (error: any) {
+      console.log(error);
       const message = error.errors?.[0]?.message || "Validation failed";
       throw new ApiError(400, message);
     }

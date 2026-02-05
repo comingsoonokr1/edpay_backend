@@ -3,7 +3,6 @@ import { AirtimeController } from "../controllers/airtime.controller.js";
 import { validate } from "../middlewares/validate.middleware.js";
 import {
   airtimeStatusSchema,
-  purchaseAirtimeSchema,
 } from "../schemas/airtime.schema.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 
@@ -81,7 +80,7 @@ router.get("/providers", authMiddleware, AirtimeController.getProviders);
 router.post(
   "/purchase",
   authMiddleware,
-  validate(purchaseAirtimeSchema),
+  // validate(purchaseAirtimeSchema),
   AirtimeController.purchase
 );
 
