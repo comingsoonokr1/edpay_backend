@@ -9,6 +9,7 @@ export const validate = (schema) => (req, _res, next) => {
         next();
     }
     catch (error) {
+        console.log(error);
         const message = error.errors?.[0]?.message || "Validation failed";
         throw new ApiError(400, message);
     }

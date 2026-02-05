@@ -254,7 +254,7 @@ export class WalletService {
         paymentReference,
       });
 
-
+      
       await session.commitTransaction();
 
       return {

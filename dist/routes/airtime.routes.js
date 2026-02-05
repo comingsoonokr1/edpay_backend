@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { AirtimeController } from "../controllers/airtime.controller.js";
 import { validate } from "../middlewares/validate.middleware.js";
-import { airtimeStatusSchema, purchaseAirtimeSchema, } from "../schemas/airtime.schema.js";
+import { airtimeStatusSchema, } from "../schemas/airtime.schema.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 const router = Router();
 /**
@@ -71,7 +71,9 @@ router.get("/providers", authMiddleware, AirtimeController.getProviders);
  *       401:
  *         description: Unauthorized
  */
-router.post("/purchase", authMiddleware, validate(purchaseAirtimeSchema), AirtimeController.purchase);
+router.post("/purchase", authMiddleware, 
+// validate(purchaseAirtimeSchema),
+AirtimeController.purchase);
 /**
  * @swagger
  * /airtime/status/{reference}:
