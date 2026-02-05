@@ -139,7 +139,7 @@ export class AuthService {
         const session = await mongoose.startSession();
         session.startTransaction();
         try {
-            const user = await User.findOne({ phoneNumber: formattedPhone }).session(session);
+            const user = await User.findOne({ phoneNumber: formattedPhone }).select("+phoneOtp").session(session);
             if (!user)
                 throw new ApiError(404, "User not found");
             if (!user.phoneOtp || !user.phoneOtpExpiry) {

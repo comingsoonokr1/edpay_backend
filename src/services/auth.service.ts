@@ -8,7 +8,7 @@ import { Wallet } from "../model/Wallet.model.js";
 import mongoose from "mongoose";
 import { sendOTPSMS } from "../shared/helpers/otp.helper.js";
 import { SafeHavenProvider } from "../providers/safeHeaven.provider.js";
-import { log } from "console";
+
 
 export class AuthService {
   private static validateAndFormatPhone(phoneNumber: string): string {
@@ -176,7 +176,7 @@ export class AuthService {
     session.startTransaction();
 
     try {
-      const user = await User.findOne({ phoneNumber: formattedPhone }).session(session);
+      const user = await User.findOne({ phoneNumber: formattedPhone }).select("+phoneOtp").session(session);
       if (!user) throw new ApiError(404, "User not found");
 
       if (!user.phoneOtp || !user.phoneOtpExpiry) {
