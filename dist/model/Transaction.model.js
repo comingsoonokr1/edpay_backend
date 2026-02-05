@@ -30,7 +30,7 @@ const TransactionSchema = new Schema({
     },
     source: {
         type: String,
-        enum: ["wallet", "bank", "card", "airtime", "bills", "checkout"],
+        enum: ["wallet", "bank", "card", "airtime", "data", "bills", "checkout"],
         required: true
     },
     isInternal: {

@@ -226,6 +226,7 @@ export class WalletService {
           {
             userId: senderId,
             type: "debit",
+            wallet:  senderWallet._id,
             amount,
             reference: paymentReference,
             status: "pending",
@@ -252,12 +253,6 @@ export class WalletService {
         saveBeneficiary: false,
         paymentReference,
       });
-
-
-      await Transaction.updateOne(
-        { reference: paymentReference },
-        { status: "success" }
-      ).session(session);
 
 
       await session.commitTransaction();
@@ -296,7 +291,7 @@ export class WalletService {
       if (!wallet) throw new ApiError(404, "Wallet not found");
 
       // Call Safe Haven to get status
-      const statusResponse = await SafeHavenProvider.transferStatus({ paymentReference });
+      const statusResponse = await SafeHavenProvider.transferStatus( paymentReference);
 
       // Example structure returned by SafeHaven:
       // statusResponse.data.status === "success" | "failed" | "queued"

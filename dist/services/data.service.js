@@ -54,6 +54,7 @@ export class DataService {
         // Create pending transaction
         const transaction = await Transaction.create({
             userId: data.userId,
+            wallet: wallet._id,
             type: "debit",
             source: "data",
             amount: data.amount,

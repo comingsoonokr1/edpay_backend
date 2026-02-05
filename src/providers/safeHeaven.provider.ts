@@ -437,8 +437,7 @@ export class SafeHavenProvider {
  */
 
 
-    static async transferStatus(params: { sessionId?: string; paymentReference?: string }) {
-        const { sessionId, paymentReference } = params;
+    static async transferStatus(sessionId?: string, paymentReference?: string) {
 
         if (!sessionId && !paymentReference) {
             throw new ApiError(400, "Either sessionId or paymentReference is required");

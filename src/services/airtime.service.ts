@@ -59,6 +59,7 @@ export class AirtimeService {
     // Create pending transaction
     const transaction = await Transaction.create({
       userId: data.userId,
+      wallet:  wallet._id,
       type: "debit",
       source: "airtime",
       amount: data.amount,

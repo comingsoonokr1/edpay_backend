@@ -48,6 +48,7 @@ export class BillService {
         const transaction = await Transaction.create({
             userId: data.userId,
             type: "bill",
+            wallet: wallet._id,
             amount: data.amount,
             reference,
             status: "pending",
