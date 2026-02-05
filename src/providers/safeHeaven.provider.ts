@@ -458,7 +458,10 @@ export class SafeHavenProvider {
                     },
                 });
 
-            return response.data.data; // includes status, queued, limitExceeded, etc.
+                console.log(response.data);
+                
+
+            return response.data; // includes status, queued, limitExceeded, etc.
         } catch (err: any) {
             throw new ApiError(
                 err.response?.status || 500,

@@ -310,7 +310,8 @@ export class SafeHavenProvider {
                     ClientID: CLIENT_ID,
                 },
             });
-            return response.data.data; // includes status, queued, limitExceeded, etc.
+            console.log(response.data);
+            return response.data; // includes status, queued, limitExceeded, etc.
         }
         catch (err) {
             throw new ApiError(err.response?.status || 500, `Safe Haven transfer status check failed: ${err.response?.data?.message || err.message}`);

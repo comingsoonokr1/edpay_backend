@@ -2,7 +2,6 @@ import { Router } from "express";
 import { WalletController } from "../controllers/wallet.controller.js";
 import { validate } from "../middlewares/validate.middleware.js";
 import { withdrawSchema, } from "../schemas/wallet.schema.js";
-import { authMiddleware } from "../middlewares/auth.middleware.js";
 const router = Router();
 /**
  * @swagger
@@ -11,7 +10,7 @@ const router = Router();
  *   description: Wallet balance, funding, withdrawal, and transfers
  */
 router.get("/account/:accountId", WalletController.getAccount);
-router.use(authMiddleware);
+// router.use(authMiddleware);
 /**
  * Get wallet balance
  */

@@ -17,7 +17,7 @@ const router = Router();
 
 router.get("/account/:accountId", WalletController.getAccount);
 
-router.use(authMiddleware);
+// router.use(authMiddleware);
 
 /**
  * Get wallet balance

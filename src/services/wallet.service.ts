@@ -222,7 +222,7 @@ export class WalletService {
       const paymentReference = `TRF_${Date.now()}`;
 
       /** ================= TRANSACTION ================= */
-      await Transaction.create(
+      const [transaction] = await Transaction.create(
         [
           {
             userId: senderId,
@@ -255,7 +255,8 @@ export class WalletService {
         paymentReference,
       });
 
-
+       transaction.status = "success";
+        await transaction.save({ session });
       await session.commitTransaction();
 
       return {
@@ -293,6 +294,9 @@ export class WalletService {
 
       // Call Safe Haven to get status
       const statusResponse = await SafeHavenProvider.transferStatus(paymentReference);
+
+      console.log(statusResponse);
+      
 
       // Example structure returned by SafeHaven:
       // statusResponse.data.status === "success" | "failed" | "queued"

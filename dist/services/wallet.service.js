@@ -161,7 +161,7 @@ export class WalletService {
             /** ================= SAFEHAVEN TRANSFER ================= */
             const paymentReference = `TRF_${Date.now()}`;
             /** ================= TRANSACTION ================= */
-            await Transaction.create([
+            const [transaction] = await Transaction.create([
                 {
                     userId: senderId,
                     type: "debit",
@@ -189,6 +189,8 @@ export class WalletService {
                 saveBeneficiary: false,
                 paymentReference,
             });
+            transaction.status = "success";
+            await transaction.save({ session });
             await session.commitTransaction();
             return {
                 message: "Transfer initiated",
@@ -221,6 +223,7 @@ export class WalletService {
                 throw new ApiError(404, "Wallet not found");
             // Call Safe Haven to get status
             const statusResponse = await SafeHavenProvider.transferStatus(paymentReference);
+            console.log(statusResponse);
             // Example structure returned by SafeHaven:
             // statusResponse.data.status === "success" | "failed" | "queued"
             const status = statusResponse.data.status.toLowerCase();
