@@ -25,6 +25,7 @@ export class BankService {
       if (!Array.isArray(banks)) {
         throw new ApiError(500, "Invalid banks response");
       }
+      
 
       // 2️⃣ Normalize user input
       const userBankName = data.bankName.trim().toUpperCase();

@@ -146,7 +146,7 @@ export class WalletService {
             const resolved = await resolveRecipient(recipient);
             const isInternal = resolved.isInternal;
             const effectiveBankName = isInternal
-                ? "Safe Haven Microfinance Bank"
+                ? "Safe Haven microfinance Bank"
                 : bankName;
             /** ================= NAME ENQUIRY ================= */
             const nameEnquiry = await BankService.nameEnquiry({
@@ -163,23 +163,13 @@ export class WalletService {
             await senderWallet.save({ session });
             /** ================= SAFEHAVEN TRANSFER ================= */
             const paymentReference = `TRF_${Date.now()}`;
-            const transferResponse = await SafeHavenProvider.transfer({
-                nameEnquiryReference: nameEnquiry.sessionId,
-                debitAccountNumber: sender.safeHavenAccount.accountNumber,
-                beneficiaryBankCode: effectiveBankCode,
-                beneficiaryAccountNumber: resolved.accountNumber,
-                amount,
-                narration: note || "Wallet Transfer",
-                saveBeneficiary: false,
-                paymentReference,
-            });
             /** ================= TRANSACTION ================= */
             await Transaction.create([
                 {
                     userId: senderId,
                     type: "debit",
                     amount,
-                    reference: transferResponse.paymentReference,
+                    reference: paymentReference,
                     status: "pending",
                     source: "wallet",
                     isInternal: resolved.isInternal,
@@ -191,6 +181,17 @@ export class WalletService {
                     },
                 },
             ], { session });
+            const transferResponse = await SafeHavenProvider.transfer({
+                nameEnquiryReference: nameEnquiry.sessionId,
+                debitAccountNumber: sender.safeHavenAccount.accountNumber,
+                beneficiaryBankCode: effectiveBankCode,
+                beneficiaryAccountNumber: resolved.accountNumber,
+                amount,
+                narration: note || "Wallet Transfer",
+                saveBeneficiary: false,
+                paymentReference,
+            });
+            await Transaction.updateOne({ reference: paymentReference }, { status: "success" }).session(session);
             await session.commitTransaction();
             return {
                 message: "Transfer initiated",
