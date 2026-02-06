@@ -105,6 +105,7 @@ export class SafeHavenProvider {
                     ClientID: CLIENT_ID,
                 },
             });
+            console.log(response);
             return response.data.data;
         }
         catch (err) {

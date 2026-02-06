@@ -164,7 +164,7 @@ export class SafeHavenProvider {
             );
 
 
-
+            console.log(response);
             return response.data.data;
         } catch (err: any) {
             throw new ApiError(
