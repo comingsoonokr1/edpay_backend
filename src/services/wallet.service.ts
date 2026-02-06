@@ -207,9 +207,7 @@ export class WalletService {
         accountNumber: resolved.accountNumber!,
       });
 
-      const effectiveBankCode = isInternal
-        ? resolved.bankCode
-        : nameEnquiry.bankCode;
+
 
       if (!nameEnquiry?.sessionId)
         throw new ApiError(400, "Name enquiry failed");
@@ -247,7 +245,7 @@ export class WalletService {
       const transferResponse = await SafeHavenProvider.transfer({
         nameEnquiryReference: nameEnquiry.sessionId,
         debitAccountNumber: sender.safeHavenAccount.accountNumber,
-        beneficiaryBankCode: effectiveBankCode!,
+        beneficiaryBankCode: nameEnquiry.bankCode,
         beneficiaryAccountNumber: resolved.accountNumber!,
         amount,
         narration: note || "Wallet Transfer",
