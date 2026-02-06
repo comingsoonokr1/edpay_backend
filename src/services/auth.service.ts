@@ -307,7 +307,6 @@ export class AuthService {
         otp,
       });
 
-      console.log(verification);
       const isOtpVerified =
         verification?.data?.otpVerified === true ||
         verification?.message?.toLowerCase().includes("otp already verified");
@@ -341,11 +340,11 @@ export class AuthService {
           otp
         });
 
+        console.log(account);
+
         if (!account || !account.accountNumber) {
           throw new ApiError(502, "Wallet creation failed");
         }
-
-        console.log(account);
 
 
         user.safeHavenAccount = {

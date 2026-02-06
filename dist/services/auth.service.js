@@ -238,7 +238,6 @@ export class AuthService {
                 type: "NIN",
                 otp,
             });
-            console.log(verification);
             const isOtpVerified = verification?.data?.otpVerified === true ||
                 verification?.message?.toLowerCase().includes("otp already verified");
             if (!isOtpVerified) {
@@ -263,10 +262,10 @@ export class AuthService {
                     identityId,
                     otp
                 });
+                console.log(account);
                 if (!account || !account.accountNumber) {
                     throw new ApiError(502, "Wallet creation failed");
                 }
-                console.log(account);
                 user.safeHavenAccount = {
                     accountId: account._id,
                     accountNumber: account.accountNumber,
