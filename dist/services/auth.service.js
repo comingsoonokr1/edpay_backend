@@ -264,6 +264,9 @@ export class AuthService {
                     identityId,
                     otp
                 });
+                if (!account || !account.accountNumber) {
+                    throw new ApiError(502, "Wallet creation failed");
+                }
                 console.log(account);
                 user.safeHavenAccount = {
                     accountId: account._id,

@@ -342,6 +342,10 @@ export class AuthService {
           otp
         });
 
+        if (!account || !account.accountNumber) {
+          throw new ApiError(502, "Wallet creation failed");
+        }
+
         console.log(account);
 
 
