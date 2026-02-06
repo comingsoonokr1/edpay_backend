@@ -339,6 +339,8 @@ export class AuthService {
           otp
         });
 
+        console.log(account);
+        
 
         user.safeHavenAccount = {
           accountId: account._id,
