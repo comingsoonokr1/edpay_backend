@@ -308,15 +308,14 @@ export class AuthService {
       });
 
       console.log(verification);
-
       const isOtpVerified =
-        verification.statusCode === 200 &&
-        (verification.data?.otpVerified === true ||
-          verification.message?.toLowerCase().includes("otp already verified"));
+        verification?.data?.otpVerified === true ||
+        verification?.message?.toLowerCase().includes("otp already verified");
 
       if (!isOtpVerified) {
         throw new ApiError(400, "NIN verification failed");
       }
+
 
 
 
