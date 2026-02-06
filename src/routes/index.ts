@@ -19,7 +19,7 @@ router.use("/airtime", airtimeRoutes);
 router.use("/bank", bankRoutes);
 router.use("/user", userRoutes);
 router.use("/bill", billRoutes);
-router.use("/notification", notificationRoutes);
+router.use("/notifications", notificationRoutes);
 router.use("/report", reportRoutes);
 router.use("/wallet", walletRoutes);
 router.use("/data", dataRoutes);

@@ -1,7 +1,7 @@
 import { Router } from "express";
 import { NotificationController } from "../controllers/notification.controller.js";
 import { validate } from "../middlewares/validate.middleware.js";
-import { getUserNotificationsSchema, sendNotificationSchema, } from "../schemas/notification.schema.js";
+import { sendNotificationSchema, } from "../schemas/notification.schema.js";
 import { authMiddleware } from "../middlewares/auth.middleware.js";
 const router = Router();
 /**
@@ -47,19 +47,12 @@ router.use(authMiddleware);
 router.post("/send", validate(sendNotificationSchema), NotificationController.sendNotification);
 /**
  * @swagger
- * /notifications/{userId}:
+ * /notifications:
  *   get:
- *     summary: Get notifications for a user
+ *     summary: Get notifications for the logged-in user
  *     tags: [Notifications]
  *     security:
  *       - bearerAuth: []
- *     parameters:
- *       - in: path
- *         name: userId
- *         required: true
- *         schema:
- *           type: string
- *         example: 64f2a0c9b8a1e90012abcd34
  *     responses:
  *       200:
  *         description: List of user notifications
@@ -78,7 +71,7 @@ router.post("/send", validate(sendNotificationSchema), NotificationController.se
  *                   message:
  *                     type: string
  *                     example: Your data purchase was successful
- *                   read:
+ *                   isRead:
  *                     type: boolean
  *                     example: false
  *                   createdAt:
@@ -86,8 +79,102 @@ router.post("/send", validate(sendNotificationSchema), NotificationController.se
  *                     format: date-time
  *       401:
  *         description: Unauthorized
- *       404:
- *         description: User not found
  */
-router.get("/:userId", validate(getUserNotificationsSchema), NotificationController.getUserNotifications);
+router.get("/", NotificationController.getUserNotifications);
+/**
+ * @swagger
+ * /notifications/unread:
+ *   get:
+ *     summary: Get unread notifications for the logged-in user
+ *     tags: [Notifications]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: List of unread notifications
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: array
+ *               items:
+ *                 type: object
+ *                 properties:
+ *                   id:
+ *                     type: string
+ *                   title:
+ *                     type: string
+ *                   message:
+ *                     type: string
+ *                   isRead:
+ *                     type: boolean
+ *                   createdAt:
+ *                     type: string
+ *                     format: date-time
+ *       401:
+ *         description: Unauthorized
+ */
+router.get("/unread", NotificationController.getUnreadNotifications);
+/**
+ * @swagger
+ * /notifications/mark-all-read:
+ *   patch:
+ *     summary: Mark all notifications as read for the logged-in user
+ *     tags: [Notifications]
+ *     security:
+ *       - bearerAuth: []
+ *     responses:
+ *       200:
+ *         description: All notifications marked as read
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 message:
+ *                   type: string
+ *                   example: All notifications marked as read
+ *       401:
+ *         description: Unauthorized
+ */
+router.patch("/mark-all-read", NotificationController.markAllAsRead);
+/**
+ * @swagger
+ * /notifications/{id}/mark-read:
+ *   patch:
+ *     summary: Mark a single notification as read by notification ID
+ *     tags: [Notifications]
+ *     security:
+ *       - bearerAuth: []
+ *     parameters:
+ *       - in: path
+ *         name: id
+ *         required: true
+ *         schema:
+ *           type: string
+ *         example: notif_123456
+ *     responses:
+ *       200:
+ *         description: Notification marked as read
+ *         content:
+ *           application/json:
+ *             schema:
+ *               type: object
+ *               properties:
+ *                 id:
+ *                   type: string
+ *                 title:
+ *                   type: string
+ *                 message:
+ *                   type: string
+ *                 isRead:
+ *                   type: boolean
+ *                 createdAt:
+ *                   type: string
+ *                   format: date-time
+ *       404:
+ *         description: Notification not found
+ *       401:
+ *         description: Unauthorized
+ */
+router.patch("/:id/mark-read", NotificationController.markAsRead);
 export default router;
