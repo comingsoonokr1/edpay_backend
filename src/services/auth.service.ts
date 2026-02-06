@@ -333,7 +333,7 @@ export class AuthService {
           phone: user.phoneNumber,
           email: user.email,
           externalReference: user._id.toString(),
-          identityType: "BVN",
+          identityType: "NIN",
           identityNumber: user.bvn!,
           identityId,
           otp
