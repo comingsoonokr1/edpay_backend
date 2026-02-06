@@ -437,6 +437,8 @@ export class SafeHavenProvider {
  */
 
 
+
+
     static async transferStatus(sessionId?: string, paymentReference?: string) {
 
         if (!sessionId && !paymentReference) {
@@ -699,6 +701,16 @@ export class SafeHavenProvider {
         });
         return response.data.data;
     }
+
+    // static async getTransfer() {
+    //     const api = await this.getAuthorizedInstance();
+    //     const response = await api.get(`/transfers/`, {
+    //         headers: {
+    //             ClientID: CLIENT_ID,
+    //         },
+    //     });
+    //     return response.data.data;
+    // }
 
 
 }

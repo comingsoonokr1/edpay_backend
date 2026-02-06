@@ -200,20 +200,19 @@ export class AuthService {
         }
         return { message: "OTP resent successfully" };
     }
-    static async initiateBVN(userId, bvn) {
+    static async initiateBVN(userId, nin) {
         const user = await User.findById(userId);
         if (!user)
             throw new ApiError(404, "User not found");
-        if (!/^\d{11}$/.test(bvn)) {
+        if (!/^\d{11}$/.test(nin)) {
             throw new ApiError(400, "BVN must be 11 digits");
         }
         const identity = await SafeHavenProvider.initiateVerification({
-            type: "BVN",
-            number: bvn,
+            type: "NIN",
+            number: nin,
             debitAccountNumber: "0116763095"
         });
-        console.log(identity);
-        user.bvn = bvn;
+        user.bvn = nin;
         await user.save();
         return {
             message: "OTP sent to BVN registered phone number",
@@ -235,7 +234,7 @@ export class AuthService {
              */
             const verification = await SafeHavenProvider.validateVerification({
                 identityId,
-                type: "BVN",
+                type: "NIN",
                 otp,
             });
             console.log(verification);

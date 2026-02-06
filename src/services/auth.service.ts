@@ -48,7 +48,7 @@ export class AuthService {
 
     try {
       const hashedPassword = await hashPassword(password);
-      const otp = generateOTP();
+      const otp = generateOTP();  
       const hashedOtp = hashOTP(otp);
 
       await sendOTPSMS(formattedPhone, otp);
@@ -254,23 +254,21 @@ export class AuthService {
   }
 
 
-static async initiateBVN(userId: string, bvn: string) {
+static async initiateBVN(userId: string, nin: string) {
   const user = await User.findById(userId);
   if (!user) throw new ApiError(404, "User not found");
 
-  if (!/^\d{11}$/.test(bvn)) {
+  if (!/^\d{11}$/.test(nin)) {
     throw new ApiError(400, "BVN must be 11 digits");
   }
 
   const identity = await SafeHavenProvider.initiateVerification({
-    type: "BVN",
-    number: bvn,
+    type: "NIN",
+    number: nin,
     debitAccountNumber: "0116763095"
   });
 
-  console.log(identity);
-
-   user.bvn = bvn;
+   user.bvn = nin;
    await user.save();
 
   return {
@@ -302,7 +300,7 @@ static async validateBVNAndCreateWallet(
      */
     const verification = await SafeHavenProvider.validateVerification({
       identityId,
-      type: "BVN",
+      type: "NIN",
       otp,
     });
 

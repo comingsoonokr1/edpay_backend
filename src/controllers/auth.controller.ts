@@ -99,14 +99,14 @@ export class AuthController {
 
  
 static initiateBVN = asyncHandler(async (req: Request, res: Response) => {
-  const { bvn } = req.body;
+  const { nin } = req.body;
   const userId = req.user!.userId;
 
-  if (!bvn) {
+  if (!nin) {
     throw new ApiError(400, "BVN is required");
   }
 
-  const result = await AuthService.initiateBVN(userId, bvn);
+  const result = await AuthService.initiateBVN(userId, nin);
 
   res.status(200).json({
     success: true,
