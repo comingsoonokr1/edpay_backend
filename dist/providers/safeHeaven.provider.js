@@ -82,7 +82,7 @@ export class SafeHavenProvider {
                     : `+${data.phone}`,
                 emailAddress: data.email,
                 externalReference,
-                identityType: "vID",
+                identityType: data.identityType,
                 // identityNumber: data.identityNumber || "22728319473",
                 identityId: data.identityId,
                 otp: data.otp
