@@ -1,3 +1,4 @@
+import { Notification } from "../model/Notification.model.js";
 import { Transaction } from "../model/Transaction.model.js";
 import { User } from "../model/User.model.js";
 import { Wallet } from "../model/Wallet.model.js";
@@ -79,6 +80,21 @@ export class DataService {
             transaction.status = "success";
             transaction.meta.providerResponse = response;
             await transaction.save();
+            // Create notification for success
+            await Notification.create({
+                userId: data.userId,
+                title: "Data Purchase Successful",
+                message: `You have successfully purchased a data bundle worth ₦${data.amount.toLocaleString()} for ${data.phone}.`,
+                channel: "in-app",
+                isRead: false,
+                type: "transaction",
+                metadata: {
+                    reference,
+                    amount: data.amount,
+                    phone: data.phone,
+                    bundleCode: data.bundleCode,
+                },
+            });
             return transaction;
         }
         catch (err) {

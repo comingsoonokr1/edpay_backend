@@ -80,7 +80,7 @@ AuthController.initiateBVN = asyncHandler(async (req, res) => {
     const { nin } = req.body;
     const userId = req.user.userId;
     if (!nin) {
-        throw new ApiError(400, "BVN is required");
+        throw new ApiError(400, "NiN is required");
     }
     const result = await AuthService.initiateBVN(userId, nin);
     res.status(200).json({

@@ -6,6 +6,7 @@ import { User } from "../model/User.model.js";
 import { SafeHavenProvider } from "../providers/safeHeaven.provider.js";
 import { BankService } from "./bank.service.js";
 import { comparePassword } from "../shared/helpers/password.helper.js";
+import { Notification } from "../model/Notification.model.js";
 function getRecipientType(value) {
     if (value.includes("@"))
         return "EMAIL";
@@ -189,6 +190,24 @@ export class WalletService {
             transaction.status = "success";
             await transaction.save({ session });
             await session.commitTransaction();
+            // Create notification for sender about the transfer
+            await Notification.create([
+                {
+                    userId: senderId,
+                    title: "Transfer Successful",
+                    message: `You have successfully transferred ₦${amount.toLocaleString()} to ${nameEnquiry.accountName || resolved.accountNumber}.`,
+                    channel: "in-app",
+                    isRead: false,
+                    type: "transaction",
+                    metadata: {
+                        reference: paymentReference,
+                        amount,
+                        beneficiaryName: nameEnquiry.accountName,
+                        beneficiaryAccountNumber: resolved.accountNumber,
+                        note,
+                    },
+                },
+            ], { session });
             return {
                 message: "Transfer initiated",
                 reference: transferResponse.paymentReference,

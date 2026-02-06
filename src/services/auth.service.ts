@@ -272,7 +272,7 @@ static async initiateBVN(userId: string, nin: string) {
    await user.save();
 
   return {
-    message: "OTP sent to BVN registered phone number",
+    message: "OTP sent to NIN registered phone number",
     identityId: identity.data._id, // IMPORTANT
   };
 }
@@ -307,7 +307,7 @@ static async validateBVNAndCreateWallet(
     console.log(verification);
 
     if (verification.statusCode !== "200" && verification.message !== "OTP already verified.") {
-      throw new ApiError(400, "BVN verification failed");
+      throw new ApiError(400, "NIN verification failed");
     }
 
     /**

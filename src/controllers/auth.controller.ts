@@ -103,7 +103,7 @@ static initiateBVN = asyncHandler(async (req: Request, res: Response) => {
   const userId = req.user!.userId;
 
   if (!nin) {
-    throw new ApiError(400, "BVN is required");
+    throw new ApiError(400, "NiN is required");
   }
 
   const result = await AuthService.initiateBVN(userId, nin);

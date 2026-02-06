@@ -215,7 +215,7 @@ export class AuthService {
         user.bvn = nin;
         await user.save();
         return {
-            message: "OTP sent to BVN registered phone number",
+            message: "OTP sent to NIN registered phone number",
             identityId: identity.data._id, // IMPORTANT
         };
     }
@@ -239,7 +239,7 @@ export class AuthService {
             });
             console.log(verification);
             if (verification.statusCode !== "200" && verification.message !== "OTP already verified.") {
-                throw new ApiError(400, "BVN verification failed");
+                throw new ApiError(400, "NIN verification failed");
             }
             /**
              *  Save KYC data

@@ -1,3 +1,4 @@
+import { Notification } from "../model/Notification.model.js";
 import { Transaction } from "../model/Transaction.model.js";
 import { User } from "../model/User.model.js";
 import { Wallet } from "../model/Wallet.model.js";
@@ -59,7 +60,7 @@ export class AirtimeService {
     // Create pending transaction
     const transaction = await Transaction.create({
       userId: data.userId,
-      wallet:  wallet._id,
+      wallet: wallet._id,
       type: "debit",
       source: "airtime",
       amount: data.amount,
@@ -91,6 +92,22 @@ export class AirtimeService {
       transaction.status = "success";
       transaction.meta = response.data;
       await transaction.save();
+
+      // Create notification for success
+      await Notification.create({
+        userId: data.userId,
+        title: "Airtime Purchase Successful",
+        message: `You have successfully purchased ₦${data.amount.toLocaleString()} airtime for ${data.phone} on ${provider.name}.`,
+        channel: "in-app",
+        isRead: false,
+        type: "transaction",
+        metadata: {
+          reference,
+          amount: data.amount,
+          phone: data.phone,
+          provider: provider.name,
+        },
+      });
 
       return transaction;
     } catch (err) {
