@@ -214,6 +214,7 @@ export class AuthService {
         });
         user.bvn = nin;
         await user.save();
+        console.log(identity.data);
         return {
             message: "OTP sent to NIN registered phone number",
             identityId: identity.data._id, // IMPORTANT
