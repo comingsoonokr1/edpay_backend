@@ -239,7 +239,8 @@ export class AuthService {
                 otp,
             });
             console.log(verification);
-            if (verification.statusCode !== "200" && verification.message !== "OTP already verified.") {
+            if (verification.statusCode !== 200 ||
+                verification.data?.otpVerified !== true) {
                 throw new ApiError(400, "NIN verification failed");
             }
             /**

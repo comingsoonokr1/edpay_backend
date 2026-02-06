@@ -48,7 +48,7 @@ export class AuthService {
 
     try {
       const hashedPassword = await hashPassword(password);
-      const otp = generateOTP();  
+      const otp = generateOTP();
       const hashedOtp = hashOTP(otp);
 
       await sendOTPSMS(formattedPhone, otp);
@@ -88,8 +88,8 @@ export class AuthService {
   static async login(email: string, password: string) {
     const user = await User.findOne({ email });
     if (!user) throw new ApiError(401, "Invalid credentials");
-    
-    
+
+
     const isValid = await comparePassword(password, user.password);
     if (!isValid) throw new ApiError(401, "Invalid credentials");
 
@@ -254,112 +254,116 @@ export class AuthService {
   }
 
 
-static async initiateBVN(userId: string, nin: string) {
-  const user = await User.findById(userId);
-  if (!user) throw new ApiError(404, "User not found");
+  static async initiateBVN(userId: string, nin: string) {
+    const user = await User.findById(userId);
+    if (!user) throw new ApiError(404, "User not found");
 
-  if (!/^\d{11}$/.test(nin)) {
-    throw new ApiError(400, "BVN must be 11 digits");
-  }
+    if (!/^\d{11}$/.test(nin)) {
+      throw new ApiError(400, "BVN must be 11 digits");
+    }
 
-  const identity = await SafeHavenProvider.initiateVerification({
-    type: "NIN",
-    number: nin,
-    debitAccountNumber: "0116763095"
-  });
-
-   user.bvn = nin;
-   await user.save();
-
-   console.log(identity.data);
-   
-
-  return {
-    message: "OTP sent to NIN registered phone number",
-    identityId: identity.data._id, // IMPORTANT
-  };
-}
-
-
-static async validateBVNAndCreateWallet(
-  userId: string,
-  identityId: string,
-  otp: string,
-  transactionPin: string
-) {
-  if (!/^\d{4}$/.test(transactionPin)) {
-    throw new ApiError(400, "Transaction PIN must be 4 digits");
-  }
-
-  const user = await User.findById(userId);
-  if (!user) throw new ApiError(404, "User not found");
-
-  const session = await mongoose.startSession();
-  session.startTransaction();
-
-  try {
-    /**
-     *  Validate OTP
-     */
-    const verification = await SafeHavenProvider.validateVerification({
-      identityId,
+    const identity = await SafeHavenProvider.initiateVerification({
       type: "NIN",
-      otp,
+      number: nin,
+      debitAccountNumber: "0116763095"
     });
 
-    console.log(verification);
+    user.bvn = nin;
+    await user.save();
 
-    if (verification.statusCode !== "200" && verification.message !== "OTP already verified.") {
-      throw new ApiError(400, "NIN verification failed");
-    }
+    console.log(identity.data);
 
-    /**
-     *  Save KYC data
-     */
-   
-    user.safeHavenIdentityId = identityId;
-    user.isKycVerified = true;
-    user.transactionPin = await hashPassword(transactionPin);
-
-    /**
-     * 3Create Wallet
-     */
-    if (!user.safeHavenAccount?.accountNumber) {
-      const account = await SafeHavenProvider.createSubAccount({
-        phone: user.phoneNumber,
-        email: user.email,
-        externalReference: user._id.toString(),
-        identityType: "BVN",
-        identityNumber: user.bvn!,
-        identityId,
-        otp
-      });
-      
-  
-      user.safeHavenAccount = {
-        accountId: account._id,
-        accountNumber: account.accountNumber,
-        accountName: account.accountName || user.fullName,
-        bankCode: account.bankCode,
-        accountReference: account.externalreference || account._id,
-        createdAt: new Date(),
-      };
-    }
-
-    await user.save({ session });
-    await session.commitTransaction();
 
     return {
-      message: "BVN verified and wallet created successfully",
-      wallet: user.safeHavenAccount,
+      message: "OTP sent to NIN registered phone number",
+      identityId: identity.data._id, // IMPORTANT
     };
-  } catch (error) {
-    await session.abortTransaction();
-    throw error;
-  } finally {
-    session.endSession();
   }
-}
+
+
+  static async validateBVNAndCreateWallet(
+    userId: string,
+    identityId: string,
+    otp: string,
+    transactionPin: string
+  ) {
+    if (!/^\d{4}$/.test(transactionPin)) {
+      throw new ApiError(400, "Transaction PIN must be 4 digits");
+    }
+
+    const user = await User.findById(userId);
+    if (!user) throw new ApiError(404, "User not found");
+
+    const session = await mongoose.startSession();
+    session.startTransaction();
+
+    try {
+      /**
+       *  Validate OTP
+       */
+      const verification = await SafeHavenProvider.validateVerification({
+        identityId,
+        type: "NIN",
+        otp,
+      });
+
+      console.log(verification);
+
+      if (
+        verification.statusCode !== 200 ||
+        verification.data?.otpVerified !== true
+      ) {
+        throw new ApiError(400, "NIN verification failed");
+      }
+
+
+      /**
+       *  Save KYC data
+       */
+
+      user.safeHavenIdentityId = identityId;
+      user.isKycVerified = true;
+      user.transactionPin = await hashPassword(transactionPin);
+
+      /**
+       * 3Create Wallet
+       */
+      if (!user.safeHavenAccount?.accountNumber) {
+        const account = await SafeHavenProvider.createSubAccount({
+          phone: user.phoneNumber,
+          email: user.email,
+          externalReference: user._id.toString(),
+          identityType: "BVN",
+          identityNumber: user.bvn!,
+          identityId,
+          otp
+        });
+
+
+        user.safeHavenAccount = {
+          accountId: account._id,
+          accountNumber: account.accountNumber,
+          accountName: account.accountName || user.fullName,
+          bankCode: account.bankCode,
+          accountReference: account.externalreference || account._id,
+          createdAt: new Date(),
+        };
+      }
+
+      await user.save({ session });
+      await session.commitTransaction();
+
+      return {
+        message: "BVN verified and wallet created successfully",
+        wallet: user.safeHavenAccount,
+      };
+    } catch (error) {
+      await session.abortTransaction();
+      throw error;
+    } finally {
+      session.endSession();
+    }
+  }
 
 
 
