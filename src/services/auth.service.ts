@@ -309,12 +309,15 @@ export class AuthService {
 
       console.log(verification);
 
-      if (
-        verification.statusCode !== 200 ||
-        verification.data?.otpVerified !== true
-      ) {
+      const isOtpVerified =
+        verification.statusCode === 200 &&
+        (verification.data?.otpVerified === true ||
+          verification.message?.toLowerCase().includes("otp already verified"));
+
+      if (!isOtpVerified) {
         throw new ApiError(400, "NIN verification failed");
       }
+
 
 
       /**
@@ -340,7 +343,7 @@ export class AuthService {
         });
 
         console.log(account);
-        
+
 
         user.safeHavenAccount = {
           accountId: account._id,
