@@ -69,7 +69,7 @@ export class BillService {
       amount: data.amount,
       reference,
       status: "pending",
-      meta: { provider: data.provider, customerId: data.customerId },
+      details: { provider: data.provider, customerId: data.customerId },
     });
 
 

@@ -65,6 +65,10 @@ export class AirtimeService {
       source: "airtime",
       amount: data.amount,
       reference,
+      meta: { 
+        phone:data.phone,
+        bundleCode: data.provider
+      },
       status: "pending",
     });
 
