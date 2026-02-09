@@ -52,7 +52,7 @@ export class BillService {
             amount: data.amount,
             reference,
             status: "pending",
-            details: { provider: data.provider, customerId: data.customerId },
+            meta: { provider: data.provider, customerId: data.customerId },
         });
         if (!user || !user.safeHavenAccount?.accountNumber) {
             throw new ApiError(404, "User bank account not found");
