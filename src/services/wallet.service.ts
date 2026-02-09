@@ -88,8 +88,8 @@ export class WalletService {
   }
 
   static async getTransactionByReference(userId: string, reference: string) {
-  return Transaction.findOne({ userId, reference });
-}
+    return Transaction.findOne({ userId, reference });
+  }
 
 
   // Create Stripe PaymentIntent to fund wallet
@@ -226,6 +226,23 @@ export class WalletService {
       const paymentReference = `TRF_${Date.now()}`;
 
       /** ================= TRANSACTION ================= */
+      // Build details object conditionally
+      const transactionDetails: any = {
+        beneficiaryName: nameEnquiry.accountName,
+        ...(note ? { note } : {}),
+      };
+
+      if (isInternal) {
+        // If recipient is email, include as userTag, else include account number
+        if (recipient.includes("@")) {
+          transactionDetails.beneficiaryUserTag = recipient;
+        } else {
+          transactionDetails.beneficiaryAccountNumber = resolved.accountNumber;
+        }
+      } else {
+        // External transfer
+        transactionDetails.beneficiaryAccountNumber = resolved.accountNumber;
+      }
       const [transaction] = await Transaction.create(
         [
           {
@@ -237,12 +254,7 @@ export class WalletService {
             status: "pending",
             source: "wallet",
             isInternal: resolved.isInternal,
-            details: {
-              beneficiaryName: nameEnquiry.accountName,
-              beneficiaryAccountNumber: resolved.accountNumber,
-              ...(resolved.userId ? { beneficiaryUserId: resolved.userId } : {}),
-              ...(note ? { note } : {}),
-            },
+            details:transactionDetails,
           },
         ],
         { session }

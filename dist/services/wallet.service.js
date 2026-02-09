@@ -162,6 +162,24 @@ export class WalletService {
             /** ================= SAFEHAVEN TRANSFER ================= */
             const paymentReference = `TRF_${Date.now()}`;
             /** ================= TRANSACTION ================= */
+            // Build details object conditionally
+            const transactionDetails = {
+                beneficiaryName: nameEnquiry.accountName,
+                ...(note ? { note } : {}),
+            };
+            if (isInternal) {
+                // If recipient is email, include as userTag, else include account number
+                if (recipient.includes("@")) {
+                    transactionDetails.beneficiaryUserTag = recipient;
+                }
+                else {
+                    transactionDetails.beneficiaryAccountNumber = resolved.accountNumber;
+                }
+            }
+            else {
+                // External transfer
+                transactionDetails.beneficiaryAccountNumber = resolved.accountNumber;
+            }
             const [transaction] = await Transaction.create([
                 {
                     userId: senderId,
@@ -172,12 +190,7 @@ export class WalletService {
                     status: "pending",
                     source: "wallet",
                     isInternal: resolved.isInternal,
-                    details: {
-                        beneficiaryName: nameEnquiry.accountName,
-                        beneficiaryAccountNumber: resolved.accountNumber,
-                        ...(resolved.userId ? { beneficiaryUserId: resolved.userId } : {}),
-                        ...(note ? { note } : {}),
-                    },
+                    details: transactionDetails,
                 },
             ], { session });
             const transferResponse = await SafeHavenProvider.transfer({
