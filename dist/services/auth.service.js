@@ -257,7 +257,7 @@ export class AuthService {
                     phone: user.phoneNumber,
                     email: user.email,
                     externalReference: user._id.toString(),
-                    identityType: "NIN",
+                    identityType: "vID",
                     identityNumber: user.bvn,
                     identityId,
                     otp
