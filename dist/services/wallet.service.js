@@ -72,6 +72,9 @@ export class WalletService {
     static async getTransactions(userId) {
         return Transaction.find({ userId }).sort({ createdAt: -1 });
     }
+    static async getTransactionByReference(userId, reference) {
+        return Transaction.findOne({ userId, reference });
+    }
     // Create Stripe PaymentIntent to fund wallet
     static async getBanks() {
         try {

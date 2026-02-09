@@ -35,6 +35,21 @@ WalletController.getTransactions = asyncHandler(async (req, res) => {
         data: transactions,
     });
 });
+WalletController.getTransactionByReference = asyncHandler(async (req, res) => {
+    const userId = req.user.userId;
+    const { reference } = req.params;
+    const transaction = await WalletService.getTransactionByReference(userId, reference);
+    if (!transaction) {
+        return res.status(404).json({
+            success: false,
+            message: "Transaction not found",
+        });
+    }
+    res.status(200).json({
+        success: true,
+        data: transaction,
+    });
+});
 WalletController.getBanks = asyncHandler(async (_req, res) => {
     const banks = await WalletService.getBanks();
     res.status(200).json({

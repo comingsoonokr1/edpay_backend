@@ -21,6 +21,10 @@ router.get("/balance", WalletController.getBalance);
  */
 router.get("/transactions", WalletController.getTransactions);
 /**
+ * Get wallet transaction bg reference history
+ */
+router.get("/transactions/:reference", WalletController.getTransactionByReference);
+/**
  * Withdraw from wallet
  */
 router.post("/withdraw", validate(withdrawSchema), WalletController.withdraw);
