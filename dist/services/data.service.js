@@ -62,6 +62,7 @@ export class DataService {
             reference,
             status: "pending",
             meta: {
+                provider: data.provider,
                 phone: data.phone,
                 bundleCode: data.bundleCode,
             },

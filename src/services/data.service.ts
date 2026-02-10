@@ -48,6 +48,7 @@ export class DataService {
     bundleCode: string;        // from selected plan
     phone: string;
     amount: number;
+    provider: string;
     transactionPin: string;
     statusUrl?: string;
   }) {
@@ -88,6 +89,7 @@ export class DataService {
       reference,
       status: "pending",
       meta: {
+        provider: data.provider,
         phone: data.phone,
         bundleCode: data.bundleCode,
       },

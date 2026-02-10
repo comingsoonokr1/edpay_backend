@@ -52,6 +52,7 @@ DataController.purchaseData = asyncHandler(async (req, res) => {
         bundleCode,
         phone,
         amount,
+        provider,
         transactionPin,
         statusUrl,
     });

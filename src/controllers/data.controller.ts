@@ -61,6 +61,7 @@ export class DataController {
       bundleCode,
       phone,
       amount,
+      provider,
       transactionPin,
       statusUrl,
     });
