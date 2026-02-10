@@ -242,6 +242,7 @@ export class WalletService {
       } else {
         // External transfer
         transactionDetails.beneficiaryAccountNumber = resolved.accountNumber;
+        transactionDetails.bankName = effectiveBankName;
       }
       const [transaction] = await Transaction.create(
         [
