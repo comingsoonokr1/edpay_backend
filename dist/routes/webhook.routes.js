@@ -32,7 +32,7 @@ router.post("/safehaven", async (req, res) => {
             await session.abortTransaction();
             return res.status(404).json({ error: "Wallet not found" });
         }
-        if (status === "success") {
+        if (status === "completed") {
             // Funds reserved earlier should now be deducted permanently
             wallet.reservedBalance -= transaction.amount;
             wallet.balance -= transaction.amount;
