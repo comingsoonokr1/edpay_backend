@@ -7,7 +7,8 @@ router.post("/safehaven", async (req, res) => {
     const session = await mongoose.startSession();
     session.startTransaction();
     try {
-        const payload = req.body;
+        const request = req.body;
+        const payload = request.data;
         // Example: extract transfer paymentReference and status
         // Adjust according to SafeHaven webhook payload docs
         const paymentReference = payload.paymentReference || payload.reference;

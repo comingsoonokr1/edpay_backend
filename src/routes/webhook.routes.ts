@@ -11,7 +11,9 @@ router.post("/safehaven", async (req, res) => {
   session.startTransaction();
 
   try {
-    const payload = req.body;
+    const request = req.body;
+
+    const payload = request.data;
 
     // Example: extract transfer paymentReference and status
     // Adjust according to SafeHaven webhook payload docs
