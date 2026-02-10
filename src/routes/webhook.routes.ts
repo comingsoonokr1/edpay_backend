@@ -6,68 +6,109 @@ import mongoose from "mongoose";
 const router = express.Router();
 
 router.post("/safehaven", async (req, res) => {
-  
   const session = await mongoose.startSession();
   session.startTransaction();
 
   try {
-    const request = req.body;
+    const payload = req.body.data;
 
-    const payload = request.data;
-
-    // Example: extract transfer paymentReference and status
-    // Adjust according to SafeHaven webhook payload docs
     const paymentReference = payload.paymentReference || payload.reference;
+    const type = (payload.type || "").toLowerCase(); // Inwards / Outwards
     const status = (payload.status || "").toLowerCase();
+    const amount = payload.amount;
+    const account = payload.account; // The receiving account ID or user mapping
+    const creditAccountName = payload.creditAccountName;
+    const creditAccountNumber = payload.creditAccountNumber;
+    const debitAccountName = payload.debitAccountName;
+    const debitAccountNumber = payload.debitAccountNumber;
+    const narration = payload.narration;
+    const provider = payload.provider;
 
-    if (!paymentReference || !status) {
-      return res.status(400).json({ error: "Missing paymentReference or status" });
+    if (!paymentReference || !type || !status || !amount) {
+      return res.status(400).json({ error: "Missing required fields" });
     }
 
-    // Find the transaction that matches this paymentReference and is pending
-    const transaction = await Transaction.findOne({
-      reference: paymentReference,
-      status: "pending",
-    }).session(session);
-
-    if (!transaction) {
-      // If no pending transaction found, maybe it’s already handled, just acknowledge
-      await session.commitTransaction();
-      return res.status(200).json({ message: "Transaction not found or already processed" });
-    }
-
-    // Fetch wallet for transaction user
-    const wallet = await Wallet.findOne({ userId: transaction.userId }).session(session);
+    // Find wallet for this account
+    const wallet = await Wallet.findOne({ accountId: account }).session(session);
     if (!wallet) {
       await session.abortTransaction();
       return res.status(404).json({ error: "Wallet not found" });
     }
 
-    if (status === "completed") {
-      // Funds reserved earlier should now be deducted permanently
-      wallet.reservedBalance -= transaction.amount;
-      wallet.balance -= transaction.amount;
-      transaction.status = "success";
+    if (type === "inwards") {
+      // Incoming transfer → create new transaction if not exists
+      let transaction = await Transaction.findOne({ reference: paymentReference }).session(session);
 
-    } else if (status === "failed" || status === "cancelled") {
-      // Release reserved funds since transfer failed
-      wallet.reservedBalance -= transaction.amount;
-      transaction.status = "failed";
-    } else {
-      // Other statuses (queued, pending) - do nothing or log
+      if (!transaction) {
+        transaction = new Transaction({
+          userId: wallet.userId,
+          type: "credit",
+          wallet: wallet._id,
+          amount,
+          reference: paymentReference,
+          status: status === "completed" ? "success" : "pending",
+          source: "bank",
+          details: {
+            creditAccountName,
+            creditAccountNumber,
+            debitAccountName,
+            debitAccountNumber,
+            narration,
+            provider,
+          },
+        });
+      } else {
+        // Update existing transaction status
+        transaction.status = status === "completed" ? "success" : status;
+      }
+
+      // If completed, add to wallet balance
+      if (status === "completed") {
+        wallet.balance += amount;
+      }
+
+      await transaction.save({ session });
+      await wallet.save({ session });
       await session.commitTransaction();
-      return res.status(200).json({ message: "Status pending or queued, no action taken" });
+      return res.status(200).json({ message: "Incoming transaction processed successfully" });
+
+    } else if (type === "outwards") {
+      // Outgoing transfer → find existing pending transaction
+      const transaction = await Transaction.findOne({
+        reference: paymentReference,
+        status: "pending",
+        wallet: wallet._id,
+      }).session(session);
+
+      if (!transaction) {
+        await session.commitTransaction();
+        return res.status(200).json({ message: "Outgoing transaction not found or already processed" });
+      }
+
+      if (status === "completed") {
+        wallet.balance -= amount;
+        transaction.status = "success";
+      } else if (status === "failed" || status === "cancelled") {
+        wallet.reservedBalance -= amount;
+        transaction.status = "failed";
+      } else {
+        await session.commitTransaction();
+        return res.status(200).json({ message: "Status pending or queued, no action taken" });
+      }
+
+      await wallet.save({ session });
+      await transaction.save({ session });
+      await session.commitTransaction();
+      return res.status(200).json({ message: "Outgoing transaction updated successfully" });
+
+    } else {
+      await session.commitTransaction();
+      return res.status(400).json({ error: "Unknown transaction type" });
     }
-
-    await wallet.save({ session });
-    await transaction.save({ session });
-
-    await session.commitTransaction();
-    return res.status(200).json({ message: "Transaction updated successfully" });
 
   } catch (error) {
     await session.abortTransaction();
-    console.error("Webhook processing error:", error);
+    console.error("Webhook error:", error);
     return res.status(500).json({ error: "Internal server error" });
   } finally {
     session.endSession();
