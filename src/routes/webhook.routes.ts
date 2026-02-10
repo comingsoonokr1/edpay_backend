@@ -2,6 +2,8 @@ import express from "express";
 import { Wallet } from "../model/Wallet.model.js";
 import { Transaction } from "../model/Transaction.model.js";
 import mongoose from "mongoose";
+import { User } from "../model/User.model.js";
+import { Notification } from "../model/Notification.model.js";
 
 const router = express.Router();
 
@@ -29,7 +31,10 @@ router.post("/safehaven", async (req, res) => {
     }
 
     // Find wallet for this account
-    const wallet = await Wallet.findOne({ accountId: account }).session(session);
+    const user = await User.findOne({
+      "safeHavenAccount.accountId": account,
+    });
+    const wallet = await Wallet.findOne({ userId: user?._id }).session(session);
     if (!wallet) {
       await session.abortTransaction();
       return res.status(404).json({ error: "Wallet not found" });
@@ -57,6 +62,8 @@ router.post("/safehaven", async (req, res) => {
             provider,
           },
         });
+
+
       } else {
         // Update existing transaction status
         transaction.status = status === "completed" ? "success" : status;
@@ -65,6 +72,32 @@ router.post("/safehaven", async (req, res) => {
       // If completed, add to wallet balance
       if (status === "completed") {
         wallet.balance += amount;
+
+        // Create notification for recipient
+        await Notification.create(
+          [
+            {
+              userId: wallet.userId, // recipient of the incoming transfer
+              title: "Funds Received",
+              message: `You have received ₦${amount.toLocaleString()} from ${debitAccountName || debitAccountNumber}.`,
+              channel: "in-app",
+              isRead: false,
+              type: "transaction",
+              metadata: {
+                reference: paymentReference,
+                amount,
+                creditAccountName,
+                creditAccountNumber,
+                debitAccountName,
+                debitAccountNumber,
+                narration,
+                provider,
+              },
+            },
+          ],
+          { session }
+        );
+
       }
 
       await transaction.save({ session });
