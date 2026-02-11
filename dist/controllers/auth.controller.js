@@ -77,12 +77,12 @@ AuthController.resendOTP = asyncHandler(async (req, res, next) => {
     }
 });
 AuthController.initiateBVN = asyncHandler(async (req, res) => {
-    const { nin } = req.body;
+    const { bvn } = req.body;
     const userId = req.user.userId;
-    if (!nin) {
-        throw new ApiError(400, "NiN is required");
+    if (!bvn) {
+        throw new ApiError(400, "BVN is required");
     }
-    const result = await AuthService.initiateBVN(userId, nin);
+    const result = await AuthService.initiateBVN(userId, bvn);
     res.status(200).json({
         success: true,
         message: result.message,
