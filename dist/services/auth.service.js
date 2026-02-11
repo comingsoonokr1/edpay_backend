@@ -208,7 +208,7 @@ export class AuthService {
             throw new ApiError(400, "BVN must be 11 digits");
         }
         const identity = await SafeHavenProvider.initiateVerification({
-            type: "NIN",
+            type: "BVN",
             number: nin,
             debitAccountNumber: "0116763095"
         });
@@ -235,13 +235,14 @@ export class AuthService {
              */
             const verification = await SafeHavenProvider.validateVerification({
                 identityId,
-                type: "NIN",
+                type: "BVN",
                 otp,
             });
+            console.log(verification);
             const isOtpVerified = verification?.data?.otpVerified === true ||
                 verification?.message?.toLowerCase().includes("otp already verified");
             if (!isOtpVerified) {
-                throw new ApiError(400, "NIN verification failed");
+                throw new ApiError(400, "BVN verification failed");
             }
             /**
              *  Save KYC data
